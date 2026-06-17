@@ -23,7 +23,7 @@ start "MAE-Server" python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 -
 timeout /t 3 /nobreak >nul
 
 echo ==========================================
-echo   Open: http://127.0.0.1:8000
+echo   Open: http://localhost:8000
 echo   Docs: http://127.0.0.1:8000/docs
 echo ==========================================
 echo.
