@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-HOST = os.getenv("HOST", "127.0.0.1")
+HOST = os.getenv("HOST", "localhost")
 PORT = int(os.getenv("PORT", "8000"))
 GO_API_KEY = os.getenv("GO_API_KEY", "")
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")

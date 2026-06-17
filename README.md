@@ -1,149 +1,226 @@
-# MAE — Make Anything Editor
+# ⚡ MAE — Make Anything Editor
 
-Browser-based code editor with AI integration. VS Code layout + OpenCode dark theme + AI chat panel.
+> 🚀 A powerful browser-based code editor with AI integration, inspired by VS Code layout with OpenCode's dark aesthetic.
 
-## Quick Start
+---
+
+## 🎯 Quick Start
 
 ```bash
-# 1. Install dependencies
+# 📦 Install dependencies
 pip install -r requirements.txt
 
-# 2. Start server (opens browser automatically)
+# 🚀 Start server (opens browser automatically)
 start.bat
 
-# 3. Or start manually
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+# 🛠️ Or start manually
+python -m uvicorn app.main:app --host localhost --port 8000 --reload
 ```
 
-Open `http://127.0.0.1:8000`
+### 🌐 Open in browser: **http://localhost:8000**
 
-## Features
+---
 
-- **Editor** — Textarea-based with line numbers, auto-save (Ctrl+S), font selector (11 fonts)
-- **AI Chat** — 3 modes: Normal (chat), Build (tools+auto-loop), Plan (questions+plan)
-- **Terminal** — Real execute API, Python + shell, command history (↑↓)
-- **Explorer** — File tree, search, inline create file/folder
-- **Extensions** — Marketplace with 12+ extensions, one-click install
-- **Skills** — AI prompt templates: Python Expert, Code Reviewer, Debugger, etc.
-- **GitHub** — Verify token, create repo, push files
-- **Settings** — Font, theme, providers (Zen/Go/Ollama), GitHub token
-- **Welcome Page** — VS Code-style landing with quick actions, shortcuts, recent files
+## ✨ Features
 
-## AI Providers
+| Feature | Description |
+|---------|-------------|
+| 📝 **Editor** | Textarea-based with line numbers, auto-save (Ctrl+S), 11 fonts |
+| 🤖 **AI Chat** | 3 modes: 💬 Normal, 🔨 Build (tools+auto-loop), 📋 Plan |
+| 💻 **Terminal** | Real execute API, Python + shell, command history (↑↓) |
+| 📁 **Explorer** | File tree, search, inline create file/folder |
+| 🧩 **Extensions** | Marketplace with 12+ extensions, one-click install |
+| 🎓 **Skills** | AI prompt templates: Python Expert, Code Reviewer, etc. |
+| 🐙 **GitHub** | Verify token, create repo, push files |
+| ⚙️ **Settings** | Font, theme, providers (Zen/Go/Ollama), GitHub token |
+| 🏠 **Welcome Page** | VS Code-style landing with quick actions, shortcuts |
 
-| Provider | Cost | Models |
-|----------|------|--------|
-| **Zen** | Free | `deepseek-v4-flash-free`, `mimo-v2.5-free`, `big-pickle` |
-| **Go** | $10/m | Paid models, requires API key |
-| **Ollama** | Free | Local models, requires Ollama running |
+---
 
-Set API key in Settings → Providers.
+## 🤖 AI Providers
 
-## AI Build Mode
+| Provider | Cost | Models | Status |
+|----------|------|--------|--------|
+| 🟢 **Zen** | 💰 Free | `deepseek-v4-flash-free`, `mimo-v2.5-free`, `big-pickle` | ✅ Active |
+| 🟡 **Go** | 💵 $10/m | Paid models, requires API key | 🔑 Configure |
+| 🔵 **Ollama** | 💰 Free | Local models, requires Ollama running | 🏠 Local |
 
-Build mode gives AI 23 tools for autonomous file editing:
+> 💡 Set API key in **Settings → Providers**
+
+---
+
+## 🔨 AI Build Mode
+
+Build mode gives AI **23 tools** for autonomous file editing:
 
 ```
-read_file, write_file, edit_file, edit_multiple, delete_file,
-create_folder, search_files, run_code, run_command, ...
+📖 read_file      ✍️ write_file     ✏️ edit_file
+📋 edit_multiple  🗑️ delete_file   📁 create_folder
+🔍 search_files   ▶️ run_code       ⚡ run_command
+✅ validate_file  📊 get_file_info  🔄 replace_in_file
+📝 count_lines    🔀 diff_file      ↩️ undo_last
+...
 ```
 
-Tools execute in auto-loop (max 8 iterations). AI reads files before editing, verifies after writing.
+🔄 **Auto-loop**: Max 8 iterations — AI reads → edits → verifies → repeats
 
-## Project Structure
+---
+
+## 📁 Project Structure
 
 ```
 MAE/
-├── app/                    # FastAPI backend
-│   ├── main.py            # Server + routes
-│   ├── config.py          # .env loader, model lists
+├── 🐍 app/                    # FastAPI backend
+│   ├── main.py               # 🚀 Server + routes
+│   ├── config.py             # ⚙️ .env loader, model lists
 │   ├── core/
-│   │   ├── ai_bridge.py   # Zen/Go/Ollama clients
-│   │   ├── file_manager.py # File CRUD, tree, search
-│   │   ├── extension_manager.py
-│   │   ├── skill_manager.py
-│   │   └── github_client.py
+│   │   ├── ai_bridge.py      # 🤖 Zen/Go/Ollama clients
+│   │   ├── file_manager.py   # 📁 File CRUD, tree, search
+│   │   ├── extension_manager.py  # 🧩 Extensions
+│   │   ├── skill_manager.py  # 🎓 Skills
+│   │   └── github_client.py  # 🐙 GitHub API
 │   └── api/
-│       ├── ai.py          # Chat endpoint
-│       ├── files.py       # File operations
-│       ├── execute.py     # Code execution
-│       ├── extensions.py  # Extension install
-│       ├── skills.py      # Skill install
-│       └── github.py      # GitHub API
-├── frontend/              # Static frontend
-│   ├── index.html         # Main app
-│   ├── css/style.css      # OC-2 Dark theme
-│   └── js/app.js          # All modules (~2300 lines)
-├── extensions/            # Installed extensions
-├── skills/                # Installed AI skills
-├── workspace/             # User workspace files
-├── start.bat              # One-click launcher
-├── requirements.txt       # Python dependencies
-└── .env.example           # Config template
+│       ├── ai.py             # 💬 Chat endpoint
+│       ├── files.py          # 📂 File operations
+│       ├── execute.py        # ▶️ Code execution
+│       ├── extensions.py     # 🧩 Extension install
+│       ├── skills.py         # 🎓 Skill install
+│       └── github.py         # 🐙 GitHub API
+├── 🌐 frontend/              # Static frontend
+│   ├── index.html            # 🏠 Main app
+│   ├── css/style.css         # 🎨 OC-2 Dark theme
+│   └── js/app.js             # 📜 All modules (~2300 lines)
+├── 🧩 extensions/            # 📦 Installed extensions
+├── 🎓 skills/                # 🧠 Installed AI skills
+├── 📂 workspace/             # 💾 User workspace files
+├── 🚀 start.bat              # ⚡ One-click launcher
+├── 📋 requirements.txt       # 📦 Python dependencies
+└── 🔧 .env.example           # 📝 Config template
 ```
 
-## Path System
+---
 
-- `%~/` → workspace root
-- `.` prefix → hidden files
-- Regular paths → relative to workspace
+## 🛤️ Path System
 
-## Keyboard Shortcuts
+| Path | Description |
+|------|-------------|
+| `%~/` | 🏠 Workspace root |
+| `.` prefix | 👁️ Hidden files |
+| Regular | 📄 Relative to workspace |
 
-| Key | Action |
-|-----|--------|
-| `Ctrl+S` | Save file |
-| `Ctrl+N` | New file |
-| `Ctrl+K` | AI Chat focus |
-| `Ctrl+Enter` | Run code / Execute terminal |
+---
 
-## Extensions
+## ⌨️ Keyboard Shortcuts
 
-Built-in extensions:
-- **Python Support** — Syntax, linting, execution
-- **JavaScript & Web** — JS/TS, HTML, CSS
-- **OpenCode OC-2 Dark** — Dark theme
-- **Code Formatter** — Auto-format on save
-- **Icon Pack** — Custom file type icons
-- **Docker Support** — Dockerfile syntax
-- **GitLens** — Git blame, history
-- **Debugger** — Breakpoints, step-through
+| Key | Action | Description |
+|-----|--------|-------------|
+| `Ctrl+S` | 💾 Save | Save current file |
+| `Ctrl+N` | 📝 New File | Create new file |
+| `Ctrl+K` | 🤖 AI Chat | Focus AI chat |
+| `Ctrl+Enter` | ▶️ Run | Execute code |
 
-Install custom extensions via JSON manifest.
+---
 
-## Skills
+## 🧩 Extensions
 
-AI prompt templates for chat:
-- **Python Expert** — Advanced Python coding
-- **Code Reviewer** — Bug detection, improvements
-- **Test Writer** — Unit test generation
-- **Debugger** — Find and fix bugs
-- **Refactorer** — Code structure improvements
-- **Doc Writer** — Documentation generation
+### 📦 Built-in Extensions
 
-## API Endpoints
+| Extension | Description | Status |
+|-----------|-------------|--------|
+| 🐍 **Python Support** | Syntax, linting, execution | ✅ Active |
+| 🟨 **JavaScript & Web** | JS/TS, HTML, CSS | ✅ Active |
+| 🎨 **OpenCode OC-2 Dark** | Dark theme | ✅ Active |
+| ✨ **Code Formatter** | Auto-format on save | ⚙️ Configure |
+| 🎨 **Icon Pack** | Custom file type icons | ✅ Active |
+| 🐳 **Docker Support** | Dockerfile syntax | 📦 Available |
+| 🔍 **GitLens** | Git blame, history | 📦 Available |
+| 🐛 **Debugger** | Breakpoints, step-through | 📦 Available |
+
+> 💡 Install custom extensions via **JSON manifest**
+
+---
+
+## 🎓 Skills
+
+### 🧠 AI Prompt Templates
+
+| Skill | Description |
+|-------|-------------|
+| 🐍 **Python Expert** | Advanced Python coding |
+| 🔍 **Code Reviewer** | Bug detection, improvements |
+| 🧪 **Test Writer** | Unit test generation |
+| 🐛 **Debugger** | Find and fix bugs |
+| ✨ **Refactorer** | Code structure improvements |
+| 📚 **Doc Writer** | Documentation generation |
+
+---
+
+## 🔌 API Endpoints
+
+### 📂 Files
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/files/tree` | File tree |
-| `GET` | `/api/files/read?path=` | Read file |
-| `POST` | `/api/files/write` | Write file |
-| `POST` | `/api/execute/run` | Execute code |
-| `POST` | `/api/ai/chat` | AI chat |
-| `GET` | `/api/extensions/list` | List extensions |
-| `POST` | `/api/extensions/install` | Install extension |
-| `GET` | `/api/skills/list` | List skills |
-| `POST` | `/api/skills/install` | Install skill |
-| `GET` | `/api/github/verify` | Verify GitHub token |
-| `POST` | `/api/github/push` | Push to GitHub |
+| `GET` | `/api/files/tree` | 🌳 File tree |
+| `GET` | `/api/files/read?path=` | 📖 Read file |
+| `POST` | `/api/files/write` | ✍️ Write file |
 
-## Tech Stack
+### 🤖 AI
 
-- **Backend**: Python 3.10+, FastAPI, uvicorn, httpx
-- **Frontend**: HTML, CSS, vanilla JS (no build tools)
-- **Theme**: OpenCode OC-2 Dark (`#0d0d0d` bg, `#fab283` accent)
-- **Icons**: Font Awesome 6.5.1 + VS Code Codicons
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/ai/chat` | 💬 Chat |
 
-## License
+### ▶️ Execute
 
-MIT
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/execute/run` | ▶️ Execute code |
+
+### 🧩 Extensions
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/extensions/list` | 📦 List extensions |
+| `POST` | `/api/extensions/install` | 📥 Install extension |
+
+### 🎓 Skills
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/skills/list` | 🧠 List skills |
+| `POST` | `/api/skills/install` | 📥 Install skill |
+
+### 🐙 GitHub
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/github/verify` | ✅ Verify token |
+| `POST` | `/api/github/push` | 🚀 Push to GitHub |
+
+---
+
+## 🛠️ Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| 🐍 **Backend** | Python 3.10+, FastAPI, uvicorn, httpx |
+| 🌐 **Frontend** | HTML, CSS, vanilla JS (no build tools) |
+| 🎨 **Theme** | OpenCode OC-2 Dark (`#0d0d0d` bg, `#fab283` accent) |
+| 🎨 **Icons** | Font Awesome 6.5.1 + VS Code Codicons |
+
+---
+
+## 📄 License
+
+MIT License
+
+---
+
+<div align="center">
+
+**Made with ❤️ by MAE Team**
+
+⭐ Star this repo if you find it helpful!
+
+</div>
