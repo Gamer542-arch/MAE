@@ -1,0 +1,11 @@
+{
+  "name": "python",
+  "displayName": "Python Support",
+  "version": "1.0.0",
+  "description": "Python language support with syntax highlighting, linting, and execution",
+  "author": "MAE",
+  "icon": "fa-brands fa-python",
+  "color": "#3572A5",
+  "activated": true,
+  "capabilities": ["syntax", "lint", "execute", "format"]
+}

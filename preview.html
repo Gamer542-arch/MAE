@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAE - Make Anything Editor</title>
+<link rel="stylesheet" href="https://unpkg.com/@vscode/codicons@0.0.35/dist/codicon.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --bg-base: #0d0d0d;
+    --bg-surface: #141414;
+    --bg-raised: #1a1a1a;
+    --bg-hover: #1f1f1f;
+    --bg-active: #252525;
+    --bg-input: #1a1a1a;
+    --bg-editor: #0d0d0d;
+    --bg-panel: #141414;
+    --bg-tab: #141414;
+    --bg-tab-active: #0d0d0d;
+    --border: #1f1f1f;
+    --border-strong: #2a2a2a;
+    --text: #e0dcd7;
+    --text-dim: #707070;
+    --text-muted: #505050;
+    --text-bright: #f1ece8;
+    --accent: #fab283;
+    --accent-hover: #fcd53a;
+    --accent-green: #12c905;
+    --accent-red: #fc533a;
+    --accent-purple: #edb2f1;
+    --accent-blue: #8cb0ff;
+    --accent-teal: #00ceb9;
+    --accent-yellow: #fcd53a;
+    --accent-orange: #fab283;
+    --diff-add-bg: rgba(18, 201, 5, 0.12);
+    --diff-add-text: #7fd88f;
+    --diff-del-bg: rgba(252, 83, 58, 0.12);
+    --diff-del-text: #e06c75;
+    --scrollbar: #252525;
+    --scrollbar-hover: #353535;
+    --editor-font: 'Comic Sans MS', cursive;
+    --syn-comment: #707070;
+    --syn-keyword: #edb2f1;
+    --syn-string: #00ceb9;
+    --syn-fn: #fab283;
+    --syn-type: #fcd53a;
+    --syn-const: #93e9f6;
+    --syn-param: #8cb0ff;
+    --syn-variable: #fc533a;
+    --syn-decorator: #fcd53a;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-base); color: var(--text); overflow: hidden; height: 100vh; font-size: 13px; }
+.font-mono { font-family: var(--editor-font), 'JetBrains Mono', monospace; }
+.font-mono-ui { font-family: 'JetBrains Mono', monospace; }
+
+/* File Icons */
+.fa-brands, .fa-solid {
+    font-size: 18px;
+    width: 22px;
+    text-align: center;
+    flex-shrink: 0;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+.fa-python { color: #3572A5; }
+.fa-java { color: #F89820; }
+.fa-html5 { color: #E34F26; }
+.fa-css3-alt { color: #264DE4; }
+.fa-js { color: #F7DF1E; }
+.fa-php { color: #777BB4; }
+.fa-react { color: #61DAFB; }
+.fa-vuejs { color: #4FC08D; }
+.fa-angular { color: #DD0031; }
+.fa-node-js { color: #339933; }
+.fa-golang { color: #00ADD8; }
+.fa-rust { color: #DEA584; }
+.fa-swift { color: #F05138; }
+.fa-folder { color: #8cb0ff; }
+.fa-git { color: #F05032; }
+.fa-markdown { color: #519ABA; }
+.fa-gear { color: #6d8086; }
+.fa-file-lines { color: #89a0c4; }
+.fa-code { color: #CBCB41; }
+.fa-file-code { color: #CB3232; }
+.fa-database { color: #4479A1; }
+.fa-terminal { color: #4EAA25; }
+.fa-gem { color: #CC342D; }
+.fa-file-circle-xmark { color: #ef4444; }
+.fa-docker { color: #2496ED; }
+.fa-file { color: #6b7280; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
+
+.app { display: flex; flex-direction: column; height: 100vh; }
+
+/* Titlebar */
+.titlebar {
+    height: 30px; background: var(--bg-base); display: flex; align-items: center;
+    padding: 0 10px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.titlebar-drag { flex: 1; display: flex; align-items: center; height: 100%; -webkit-app-region: drag; }
+.titlebar-logo {
+    width: 22px; height: 22px; background: linear-gradient(135deg, var(--accent), #e8956a);
+    border-radius: 5px; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 11px; color: #0d0d0d; flex-shrink: 0; margin-right: 8px;
+}
+.titlebar-menu { display: flex; gap: 0; -webkit-app-region: no-drag; }
+.titlebar-menu-item {
+    padding: 0 8px; height: 30px; display: flex; align-items: center;
+    font-size: 12px; color: var(--text-dim); cursor: pointer;
+}
+.titlebar-menu-item:hover { background: var(--bg-hover); color: var(--text); }
+.titlebar-search {
+    display: flex; align-items: center; gap: 5px; padding: 3px 10px;
+    background: var(--bg-raised); border: 1px solid var(--border); border-radius: 4px;
+    color: var(--text-muted); font-size: 11px; margin: 0 12px; min-width: 180px;
+}
+.titlebar-search .codicon { font-size: 13px; }
+.titlebar-search kbd {
+    margin-left: auto; font-size: 9px; padding: 1px 4px; background: var(--bg-active);
+    border-radius: 2px; color: var(--text-muted);
+}
+.titlebar-right { display: flex; align-items: center; gap: 0; -webkit-app-region: no-drag; }
+.titlebar-btn {
+    width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text-dim); background: none; border: none;
+}
+.titlebar-btn:hover { background: var(--bg-hover); color: var(--text); }
+.titlebar-btn .codicon { font-size: 15px; }
+.titlebar-btn.close:hover { background: var(--accent-red); color: white; }
+
+/* Main */
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* Activity Bar */
+.activitybar {
+    width: 48px; background: var(--bg-base); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center; padding: 6px 0;
+    justify-content: space-between; flex-shrink: 0;
+}
+.ab-top, .ab-bottom { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.ab-icon {
+    width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+    border-radius: 6px; cursor: pointer; color: var(--text-dim); position: relative;
+}
+.ab-icon:hover { background: var(--bg-hover); color: var(--text); }
+.ab-icon.active { color: var(--accent); background: var(--bg-active); }
+.ab-icon.active::before {
+    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px;
+    background: var(--accent); border-radius: 0 2px 2px 0;
+}
+.ab-icon .codicon { font-size: 20px; }
+.ab-badge {
+    position: absolute; top: 6px; right: 6px; min-width: 14px; height: 14px;
+    background: var(--accent); border-radius: 7px; font-size: 8px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center; color: #0d0d0d;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 240px; background: var(--bg-surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; flex-shrink: 0;
+}
+.sidebar-header {
+    height: 35px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 12px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.sidebar-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--text-dim); font-weight: 500;
+}
+.sidebar-actions { display: flex; gap: 2px; }
+.sidebar-btn {
+    width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+    border-radius: 4px; cursor: pointer; color: var(--text-dim); background: none; border: none;
+}
+.sidebar-btn:hover { background: var(--bg-hover); color: var(--text); }
+.sidebar-btn .codicon { font-size: 14px; }
+
+.sidebar-search { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.sidebar-search-input {
+    width: 100%; background: var(--bg-input); border: 1px solid var(--border); border-radius: 4px;
+    padding: 5px 8px 5px 28px; color: var(--text); font-size: 12px; outline: none;
+}
+.sidebar-search-input:focus { border-color: var(--accent); }
+.sidebar-search-wrap { position: relative; }
+.sidebar-search-wrap .codicon {
+    position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
+    font-size: 13px; color: var(--text-muted);
+}
+
+/* File Tree */
+.file-tree { flex: 1; overflow-y: auto; padding: 4px 0; }
+.tree-section-header {
+    display: flex; align-items: center; padding: 4px 10px; cursor: pointer;
+    font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-dim);
+    user-select: none;
+}
+.tree-section-header:hover { background: var(--bg-hover); }
+.tree-section-header .codicon { font-size: 12px; margin-right: 3px; color: var(--text-muted); }
+.tree-item {
+    display: flex; align-items: center; padding: 3px 10px 3px 24px; cursor: pointer;
+    font-size: 12px; height: 22px; white-space: nowrap;
+}
+.tree-item:hover { background: var(--bg-hover); }
+.tree-item.active { background: rgba(250, 178, 131, 0.08); color: var(--text-bright); }
+.tree-item .codicon { font-size: 14px; margin-right: 5px; flex-shrink: 0; }
+.tree-indent { width: 16px; flex-shrink: 0; }
+.tree-sep { height: 1px; background: var(--border); margin: 6px 10px; }
+
+/* Center */
+.center { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+/* Tabs */
+.tabs-bar {
+    height: 35px; background: var(--bg-surface); display: flex; align-items: center;
+    border-bottom: 1px solid var(--border); flex-shrink: 0; overflow-x: auto;
+}
+.tabs-bar::-webkit-scrollbar { height: 0; }
+.tab {
+    display: flex; align-items: center; gap: 6px; padding: 0 14px; height: 35px;
+    font-size: 12px; cursor: pointer; color: var(--text-dim); position: relative;
+    border-right: 1px solid var(--border); flex-shrink: 0; white-space: nowrap;
+}
+.tab:hover { color: var(--text); background: var(--bg-hover); }
+.tab.active { color: var(--text-bright); background: var(--bg-editor); }
+.tab.active::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--accent);
+}
+.tab .codicon { font-size: 14px; }
+.tab-x {
+    width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;
+    border-radius: 3px; opacity: 0; margin-left: 4px;
+}
+.tab:hover .tab-x, .tab.active .tab-x { opacity: 1; }
+.tab-x:hover { background: var(--bg-active); }
+.tab-x .codicon { font-size: 10px; }
+.tab-add { padding: 0 10px; color: var(--text-muted); }
+.tab-add:hover { color: var(--text); background: var(--bg-hover); }
+
+/* Editor */
+.center-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.editor-panel { flex: 1; display: flex; overflow: hidden; }
+.editor { flex: 1; background: var(--bg-editor); display: flex; overflow: hidden; }
+.editor-gutter {
+    width: 56px; text-align: right; padding: 12px 12px 12px 0;
+    color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    line-height: 20px; user-select: none; flex-shrink: 0; background: var(--bg-editor);
+}
+.diff-gutter { width: 20px; flex-shrink: 0; }
+.diff-gutter.add { background: var(--diff-add-bg); }
+.diff-gutter.del { background: var(--diff-del-bg); }
+.editor-code {
+    flex: 1; padding: 12px 16px; font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; line-height: 20px; overflow: auto;
+}
+.line { height: 20px; white-space: pre; }
+.line.add { background: var(--diff-add-bg); }
+.line.del { background: var(--diff-del-bg); }
+.line .kw { color: var(--syn-keyword); }
+.line .fn { color: var(--syn-fn); }
+.line .str { color: var(--syn-string); }
+.line .cls { color: var(--syn-type); }
+.line .num { color: var(--syn-const); }
+.line .cmt { color: var(--syn-comment); font-style: italic; }
+.line .param { color: var(--syn-param); }
+.line .op { color: var(--text); }
+.line .dec { color: var(--syn-decorator); }
+.line .type { color: var(--syn-type); }
+.line .builtin { color: var(--accent-blue); }
+.line-highlight { background: rgba(250, 178, 131, 0.06); }
+
+/* Chat Sidebar */
+.chat-sidebar {
+    width: 340px; background: var(--bg-surface); border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; flex-shrink: 0;
+}
+.chat-header {
+    height: 35px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 12px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.chat-header-left { display: flex; align-items: center; gap: 6px; }
+.chat-header-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--text-dim); font-weight: 500;
+}
+.chat-header-left .codicon { font-size: 14px; color: var(--accent); }
+.chat-header-actions { display: flex; gap: 2px; }
+.chat-header-btn {
+    width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+    border-radius: 4px; cursor: pointer; color: var(--text-dim); background: none; border: none;
+}
+.chat-header-btn:hover { background: var(--bg-hover); color: var(--text); }
+.chat-header-btn .codicon { font-size: 14px; }
+
+.chat-body { flex: 1; overflow-y: auto; padding: 8px 0; }
+.chat-msg { padding: 10px 14px; }
+.chat-msg-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.chat-msg-role { font-size: 12px; font-weight: 600; }
+.chat-msg-role.user { color: var(--accent); }
+.chat-msg-role.ai { color: var(--accent-purple); }
+.chat-msg-file { font-size: 12px; color: var(--text-dim); }
+.chat-msg-diff { font-size: 11px; margin-left: 4px; }
+.chat-msg-diff.add { color: var(--accent-green); }
+.chat-msg-diff.del { color: var(--accent-red); }
+.chat-msg-time { font-size: 10px; color: var(--text-muted); margin-left: auto; }
+.chat-msg-body { font-size: 13px; line-height: 1.5; color: var(--text); padding-left: 0; }
+.chat-msg-body code {
+    background: var(--bg-active); padding: 1px 5px; border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent-teal);
+}
+.chat-code-block {
+    background: var(--bg-base); border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 14px; margin: 6px 0; font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; line-height: 18px; overflow-x: auto;
+}
+.chat-code-block .line.add { background: var(--diff-add-bg); padding: 0 4px; border-radius: 2px; }
+.chat-code-block .line.del { background: var(--diff-del-bg); padding: 0 4px; border-radius: 2px; }
+.chat-actions { display: flex; gap: 4px; margin-top: 6px; }
+.chat-action-btn {
+    display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 4px;
+    font-size: 11px; cursor: pointer; background: var(--bg-raised); border: 1px solid var(--border);
+    color: var(--text-dim);
+}
+.chat-action-btn:hover { background: var(--bg-hover); color: var(--text); border-color: var(--accent); }
+.chat-action-btn .codicon { font-size: 12px; }
+
+.chat-task {
+    margin: 8px 14px; padding: 10px 12px; background: var(--bg-raised);
+    border: 1px solid var(--border); border-radius: 6px;
+}
+.chat-task-head {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 6px;
+}
+.chat-task-head .codicon { font-size: 13px; color: var(--text-dim); cursor: pointer; }
+.chat-task-item {
+    display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim);
+}
+.chat-task-item .codicon { font-size: 13px; color: var(--text-muted); }
+.chat-task-item.done { color: var(--accent-green); }
+.chat-task-item.done .codicon { color: var(--accent-green); }
+
+/* Chat Input */
+.chat-input-area { padding: 10px 14px; border-top: 1px solid var(--border); flex-shrink: 0; }
+.chat-input-wrap { position: relative; }
+.chat-input {
+    width: 100%; background: var(--bg-raised); border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 40px 8px 10px; color: var(--text); font-size: 13px; font-family: inherit;
+    resize: none; outline: none; min-height: 38px;
+}
+.chat-input:focus { border-color: var(--accent); }
+.chat-input::placeholder { color: var(--text-muted); }
+.chat-send-btn {
+    position: absolute; right: 6px; bottom: 6px; width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center; border-radius: 4px;
+    background: var(--bg-active); border: none; cursor: pointer; color: var(--text-dim);
+}
+.chat-send-btn:hover { background: var(--accent); color: #0d0d0d; }
+.chat-send-btn .codicon { font-size: 13px; }
+.chat-input-bar { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.chat-bar-item {
+    display: flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 4px;
+    font-size: 11px; color: var(--text-muted); cursor: pointer;
+}
+.chat-bar-item:hover { background: var(--bg-hover); color: var(--text); }
+.chat-bar-item .codicon { font-size: 13px; }
+.chat-bar-model {
+    display: flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 4px;
+    font-size: 11px; color: var(--text-dim); background: var(--bg-raised);
+    border: 1px solid var(--border); cursor: pointer; margin-left: auto;
+}
+.chat-bar-model .codicon { font-size: 11px; }
+
+/* Panel */
+.panel {
+    border-top: 1px solid var(--border); flex-shrink: 0; background: var(--bg-panel);
+    display: flex; flex-direction: column;
+}
+.panel-tabs {
+    height: 32px; display: flex; align-items: center; border-bottom: 1px solid var(--border);
+    padding: 0 8px; flex-shrink: 0;
+}
+.panel-tab {
+    display: flex; align-items: center; gap: 4px; padding: 0 10px; height: 32px;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; cursor: pointer;
+    color: var(--text-dim); position: relative;
+}
+.panel-tab:hover { color: var(--text); }
+.panel-tab.active { color: var(--text); }
+.panel-tab.active::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+    background: var(--accent);
+}
+.panel-tab .codicon { font-size: 13px; }
+.panel-tab-badge {
+    font-size: 9px; min-width: 14px; height: 14px; padding: 0 3px;
+    border-radius: 7px; display: flex; align-items: center; justify-content: center;
+    background: rgba(252, 83, 58, 0.15); color: var(--accent-red);
+}
+.panel-right-btns { margin-left: auto; display: flex; gap: 2px; }
+.panel-rbtn {
+    width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
+    border-radius: 3px; cursor: pointer; color: var(--text-dim); background: none; border: none;
+}
+.panel-rbtn:hover { background: var(--bg-hover); color: var(--text); }
+.panel-rbtn .codicon { font-size: 13px; }
+.panel-content {
+    height: 100px; overflow-y: auto; padding: 8px 12px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+}
+.pline { line-height: 18px; white-space: pre; }
+.pline.cmd { color: var(--text-dim); }
+.pline.info { color: var(--text); }
+.pline.ok { color: var(--accent-green); }
+.pline.warn { color: var(--accent-yellow); }
+.pline.err { color: var(--accent-red); }
+
+/* Status Bar */
+.statusbar {
+    height: 22px; background: var(--bg-base); border-top: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 10px; font-size: 11px;
+    color: var(--text-dim); flex-shrink: 0;
+}
+.sb-item {
+    display: flex; align-items: center; gap: 4px; padding: 0 6px; height: 100%;
+    cursor: pointer; white-space: nowrap;
+}
+.sb-item:hover { background: var(--bg-hover); color: var(--text); }
+.sb-item .codicon { font-size: 13px; }
+.sb-sep { width: 1px; height: 10px; background: var(--border); margin: 0 2px; }
+
+/* Font Selector */
+.font-wrap { position: relative; }
+.font-btn {
+    display: flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 3px;
+    background: var(--bg-raised); border: 1px solid var(--border); color: var(--text-dim);
+    font-size: 11px; cursor: pointer;
+}
+.font-btn:hover { border-color: var(--accent); color: var(--text); }
+.font-btn .codicon { font-size: 11px; }
+.font-dd {
+    display: none; position: absolute; bottom: 100%; right: 0; margin-bottom: 4px;
+    background: var(--bg-raised); border: 1px solid var(--border-strong); border-radius: 6px;
+    min-width: 200px; z-index: 100; box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+    padding: 4px; max-height: 340px; overflow-y: auto;
+}
+.font-dd.show { display: block; }
+.font-opt {
+    display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 4px;
+    font-size: 12px; cursor: pointer; color: var(--text-dim);
+}
+.font-opt:hover { background: var(--bg-hover); color: var(--text); }
+.font-opt.active { background: var(--bg-active); color: var(--accent); }
+.font-opt .chk { width: 14px; text-align: center; }
+.font-opt .chk.hid { visibility: hidden; }
+.font-opt .prev { margin-left: auto; font-size: 10px; color: var(--text-muted); }
+.font-sep { height: 1px; background: var(--border); margin: 3px 0; }
+.font-lbl { padding: 5px 8px 3px; font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+
+/* Typing animation */
+.typing-dots { display: inline-flex; gap: 3px; padding: 4px 0; }
+.typing-dots span {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--accent-purple);
+    animation: typing 1.4s infinite ease-in-out;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typing {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-4px); opacity: 1; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TITLEBAR -->
+<div class="titlebar">
+    <div class="titlebar-drag">
+        <div class="titlebar-logo">M</div>
+        <div class="titlebar-menu">
+            <div class="titlebar-menu-item">File</div>
+            <div class="titlebar-menu-item">Edit</div>
+            <div class="titlebar-menu-item">Selection</div>
+            <div class="titlebar-menu-item">View</div>
+            <div class="titlebar-menu-item">Go</div>
+            <div class="titlebar-menu-item">Run</div>
+            <div class="titlebar-menu-item">Terminal</div>
+            <div class="titlebar-menu-item">Help</div>
+        </div>
+        <div class="titlebar-search">
+            <span class="codicon codicon-search"></span>
+            <span>Szukaj MAE</span>
+            <kbd>Ctrl+K</kbd>
+        </div>
+    </div>
+    <div class="titlebar-right">
+        <button class="titlebar-btn"><span class="codicon codicon-settings"></span></button>
+        <button class="titlebar-btn"><span class="codicon codicon-chrome-minimize"></span></button>
+        <button class="titlebar-btn"><span class="codicon codicon-chrome-maximize"></span></button>
+        <button class="titlebar-btn close"><span class="codicon codicon-chrome-close"></span></button>
+    </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- Activity Bar -->
+<div class="activitybar">
+    <div class="ab-top">
+        <div class="ab-icon active" title="Explorer"><span class="codicon codicon-files"></span></div>
+        <div class="ab-icon" title="Search"><span class="codicon codicon-search"></span></div>
+        <div class="ab-icon" title="Source Control"><span class="codicon codicon-source-control"></span><span class="ab-badge">3</span></div>
+        <div class="ab-icon" title="Run & Debug"><span class="codicon codicon-debug-alt"></span></div>
+        <div class="ab-icon" title="AI Chat"><span class="codicon codicon-comment-discussion"></span></div>
+        <div class="ab-icon" title="Extensions"><span class="codicon codicon-extensions"></span></div>
+    </div>
+    <div class="ab-bottom">
+        <div class="ab-icon" title="Accounts"><span class="codicon codicon-account"></span></div>
+        <div class="ab-icon" title="Settings"><span class="codicon codicon-settings-gear"></span></div>
+    </div>
+</div>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="sidebar-header">
+        <span class="sidebar-title">Explorer</span>
+        <div class="sidebar-actions">
+            <button class="sidebar-btn" title="New File"><span class="codicon codicon-new-file"></span></button>
+            <button class="sidebar-btn" title="New Folder"><span class="codicon codicon-new-folder"></span></button>
+            <button class="sidebar-btn" title="Refresh"><span class="codicon codicon-refresh"></span></button>
+            <button class="sidebar-btn" title="Collapse All"><span class="codicon codicon-collapse-all"></span></button>
+        </div>
+    </div>
+    <div class="sidebar-search">
+        <div class="sidebar-search-wrap">
+            <span class="codicon codicon-search"></span>
+            <input class="sidebar-search-input" placeholder="Search files...">
+        </div>
+    </div>
+    <div class="file-tree" id="fileTree"></div>
+</div>
+
+<!-- Center -->
+<div class="center">
+    <div class="tabs-bar" id="tabsBar"></div>
+    <div class="center-body">
+        <div class="editor-panel">
+            <!-- Editor -->
+            <div class="editor">
+                <div class="diff-gutter"></div>
+                <div class="editor-gutter font-mono-ui" id="editorGutter"></div>
+                <div class="editor-code font-mono" id="editorCode"></div>
+            </div>
+
+            <!-- Bottom Panel -->
+            <div class="panel">
+                <div class="panel-tabs">
+                    <div class="panel-tab"><span class="codicon codicon-output"></span> OUTPUT</div>
+                    <div class="panel-tab active"><span class="codicon codicon-terminal"></span> TERMINAL</div>
+                    <div class="panel-tab"><span class="codicon codicon-warning"></span> PROBLEMS <span class="panel-tab-badge">0</span></div>
+                    <div class="panel-tab"><span class="codicon codicon-list-flat"></span> DEBUG</div>
+                    <div class="panel-right-btns">
+                        <button class="panel-rbtn"><span class="codicon codicon-add"></span></button>
+                        <button class="panel-rbtn"><span class="codicon codicon-trash"></span></button>
+                        <button class="panel-rbtn"><span class="codicon codicon-chevron-up"></span></button>
+                        <button class="panel-rbtn"><span class="codicon codicon-close"></span></button>
+                    </div>
+                </div>
+                <div class="panel-content font-mono">
+<div class="pline cmd">PS H:\proj\MAE> python -m app.main</div>
+<div class="pline info">INFO:     Uvicorn running on http://127.0.0.1:8000</div>
+<div class="pline info">INFO:     Started reloader process [12840]</div>
+<div class="pline ok">INFO:     Application startup complete.</div>
+<div class="pline info">INFO:     127.0.0.1:54321 - "GET / HTTP/1.1" 200 OK</div>
+<div class="pline info">INFO:     127.0.0.1:54322 - "POST /api/ai/chat HTTP/1.1" 200 OK</div>
+<div class="pline ok">INFO:     Zen API connected - 5 free models available</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Chat Sidebar -->
+<div class="chat-sidebar">
+    <div class="chat-header">
+        <div class="chat-header-left">
+            <span class="codicon codicon-comment-discussion"></span>
+            <span class="chat-header-title">AI Assistant</span>
+            <span style="width:6px;height:6px;border-radius:50%;background:var(--accent-green);display:inline-block;"></span>
+        </div>
+        <div class="chat-header-actions">
+            <button class="chat-header-btn" title="New Chat"><span class="codicon codicon-add"></span></button>
+            <button class="chat-header-btn" title="Clear"><span class="codicon codicon-clear-all"></span></button>
+            <button class="chat-header-btn" title="Export"><span class="codicon codicon-export"></span></button>
+        </div>
+    </div>
+    <div class="chat-body" id="chatBody">
+        <!-- Task -->
+        <div class="chat-task">
+            <div class="chat-task-head">
+                <span>Ukończono 1 z 1 zadań</span>
+                <span class="codicon codicon-chevron-down"></span>
+            </div>
+            <div class="chat-task-item done">
+                <span class="codicon codicon-check"></span>
+                <span>Zamień Font Awesome na ikony plików</span>
+            </div>
+        </div>
+
+        <!-- User message 1 -->
+        <div class="chat-msg">
+            <div class="chat-msg-head">
+                <span class="chat-msg-role user">Ty</span>
+                <span class="chat-msg-time">14:32</span>
+            </div>
+            <div class="chat-msg-body">Dodaj obsługę Pythona w ai_bridge.py</div>
+        </div>
+
+        <!-- AI response 1 -->
+        <div class="chat-msg">
+            <div class="chat-msg-head">
+                <span class="chat-msg-role ai">MAE AI</span>
+                <span class="chat-msg-file">ai_bridge.py</span>
+                <span class="chat-msg-diff add">+12</span>
+                <span class="chat-msg-diff del">-3</span>
+                <span class="chat-msg-time">14:32</span>
+            </div>
+            <div class="chat-msg-body">Dodałem klasę <code>PythonBridge</code> z obsługą async subprocess. Oto zmiany:</div>
+            <div class="chat-code-block font-mono">
+<div style="color:var(--text-muted);">8: class PythonBridge:</div>
+<div style="color:var(--text-muted);">9:     def __init__(self):</div>
+<div class="line del"><span style="color:var(--accent-red);">10:         self.timeout = 30</span></div>
+<div class="line add"><span style="color:var(--accent-green);">10:         self.timeout = 60</span></div>
+<div class="line add"><span style="color:var(--accent-green);">11:         self.max_output = 10000</span></div>
+<div class="line add"><span style="color:var(--accent-green);">12:</span></div>
+<div class="line add"><span style="color:var(--accent-green);">13:     async def execute(self, code: str) -> dict:</span></div>
+<div class="line add"><span style="color:var(--accent-green);">14:         proc = await asyncio.create_subprocess_exec(</span></div>
+<div class="line add"><span style="color:var(--accent-green);">15:             "python", "-c", code,</span></div>
+<div class="line add"><span style="color:var(--accent-green);">16:             stdout=asyncio.subprocess.PIPE,</span></div>
+<div class="line add"><span style="color:var(--accent-green);">17:             stderr=asyncio.subprocess.PIPE</span></div>
+<div class="line add"><span style="color:var(--accent-green);">18:         )</span></div>
+            </div>
+            <div class="chat-actions">
+                <button class="chat-action-btn"><span class="codicon codicon-copy"></span> Kopiuj</button>
+                <button class="chat-action-btn"><span class="codicon codicon-diff-added"></span> Zastosuj</button>
+                <button class="chat-action-btn"><span class="codicon codicon-history"></span> Cofnij</button>
+            </div>
+        </div>
+
+        <!-- User message 2 -->
+        <div class="chat-msg">
+            <div class="chat-msg-head">
+                <span class="chat-msg-role user">Ty</span>
+                <span class="chat-msg-time">14:33</span>
+            </div>
+            <div class="chat-msg-body">Jak uruchomić ten projekt?</div>
+        </div>
+
+        <!-- AI response 2 -->
+        <div class="chat-msg">
+            <div class="chat-msg-head">
+                <span class="chat-msg-role ai">MAE AI</span>
+                <span class="chat-msg-time">14:33</span>
+            </div>
+            <div class="chat-msg-body">Aby uruchomić MAE, wykonaj te kroki:</div>
+            <div class="chat-msg-body" style="margin-top:6px;">
+                1. <code>pip install -r requirements.txt</code><br>
+                2. <code>copy .env.example .env</code><br>
+                3. <code>uvicorn app.main:app --reload</code><br><br>
+                Następnie otwórz <code>http://localhost:8000</code> w przeglądarce.
+            </div>
+            <div class="chat-actions">
+                <button class="chat-action-btn"><span class="codicon codicon-terminal"></span> Uruchom w terminalu</button>
+            </div>
+        </div>
+
+        <!-- User message 3 -->
+        <div class="chat-msg">
+            <div class="chat-msg-head">
+                <span class="chat-msg-role user">Ty</span>
+                <span class="chat-msg-time">14:34</span>
+            </div>
+            <div class="chat-msg-body">Napisz test dla ai_bridge</div>
+        </div>
+
+        <!-- AI response 3 -->
+        <div class="chat-msg">
+            <div class="chat-msg-head">
+                <span class="chat-msg-role ai">MAE AI</span>
+                <span class="chat-msg-file">tests/test_ai_bridge.py</span>
+                <span class="chat-msg-diff add">+28</span>
+                <span class="chat-msg-time">14:34</span>
+            </div>
+            <div class="chat-msg-body">Utworzyłem plik testowy z pytest:</div>
+            <div class="chat-code-block font-mono">
+<div class="line"><span class="kw">import</span> <span class="param">pytest</span></div>
+<div class="line"><span class="kw">from</span> <span class="param">app.core.ai_bridge</span> <span class="kw">import</span> <span class="type">AIBridge</span></div>
+<div class="line"></div>
+<div class="line"></div>
+<div class="line"><span class="dec">@pytest.mark.asyncio</span></div>
+<div class="line"><span class="kw">async def</span> <span class="fn">test_zen_chat</span>():</div>
+<div class="line">    bridge = <span class="type">AIBridge</span>()</div>
+<div class="line">    response = <span class="kw">await</span> bridge.<span class="fn">chat</span>(</div>
+<div class="line">        provider=<span class="str">"zen"</span>,</div>
+<div class="line">        model=<span class="str">"mimo-v2.5-free"</span>,</div>
+<div class="line">        messages=[{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"Hello"</span>}]</div>
+<div class="line">    )</div>
+<div class="line">    <span class="kw">assert</span> <span class="str">"choices"</span> <span class="kw">in</span> response</div>
+            </div>
+            <div class="chat-actions">
+                <button class="chat-action-btn"><span class="codicon codicon-copy"></span> Kopiuj</button>
+                <button class="chat-action-btn"><span class="codicon codicon-diff-added"></span> Zastosuj</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Input -->
+    <div class="chat-input-area">
+        <div class="chat-input-wrap">
+            <textarea class="chat-input" id="chatInput" placeholder="Zapytaj o cokolwiek..." rows="2"></textarea>
+            <button class="chat-send-btn" id="sendBtn"><span class="codicon codicon-send"></span></button>
+        </div>
+        <div class="chat-input-bar">
+            <button class="chat-bar-item"><span class="codicon codicon-add"></span></button>
+            <button class="chat-bar-item"><span class="codicon codicon-terminal"></span></button>
+            <button class="chat-bar-model">
+                <span class="codicon codicon-symbol-misc"></span>
+                MiMo V2.5 Free
+                <span class="codicon codicon-chevron-down" style="font-size:9px;"></span>
+            </button>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<!-- STATUSBAR -->
+<div class="statusbar">
+    <div class="sb-item"><span class="codicon codicon-source-control"></span> main</div>
+    <div class="sb-sep"></div>
+    <div class="sb-item"><span class="codicon codicon-sync"></span> 0</div>
+    <div class="sb-sep"></div>
+    <div class="sb-item"><span class="codicon codicon-error"></span> 0</div>
+    <div class="sb-item"><span class="codicon codicon-warning"></span> 0</div>
+    <div style="flex:1;"></div>
+    <div class="sb-item">Ln 5, Col 1</div>
+    <div class="sb-sep"></div>
+    <div class="sb-item">Spaces: 4</div>
+    <div class="sb-sep"></div>
+    <div class="sb-item">UTF-8</div>
+    <div class="sb-sep"></div>
+    <div class="sb-item"><span class="codicon codicon-code"></span> Python</div>
+    <div class="sb-sep"></div>
+    <div class="font-wrap" id="fontWrap">
+        <button class="font-btn" onclick="toggleFontDD()">
+            <span class="codicon codicon-symbol-text"></span>
+            <span id="fontLabel">Comic Sans MS</span>
+            <span class="codicon codicon-chevron-down" style="font-size:9px;"></span>
+        </button>
+        <div class="font-dd" id="fontDD">
+            <div class="font-lbl">Editor Font</div>
+            <div class="font-opt active" onclick="setFont('Comic Sans MS',this)" data-font="Comic Sans MS">
+                <span class="chk codicon codicon-check"></span><span>Comic Sans MS</span>
+                <span class="prev" style="font-family:'Comic Sans MS';">Aa</span>
+            </div>
+            <div class="font-opt" onclick="setFont('JetBrains Mono',this)" data-font="JetBrains Mono">
+                <span class="chk codicon codicon-check hid"></span><span>JetBrains Mono</span>
+                <span class="prev" style="font-family:'JetBrains Mono';">Aa</span>
+            </div>
+            <div class="font-opt" onclick="setFont('Cascadia Code',this)" data-font="Cascadia Code">
+                <span class="chk codicon codicon-check hid"></span><span>Cascadia Code</span>
+                <span class="prev" style="font-family:'Cascadia Code';">Aa</span>
+            </div>
+            <div class="font-opt" onclick="setFont('Fira Code',this)" data-font="Fira Code">
+                <span class="chk codicon codicon-check hid"></span><span>Fira Code</span>
+                <span class="prev" style="font-family:'Fira Code';">Aa</span>
+            </div>
+            <div class="font-opt" onclick="setFont('Consolas',this)" data-font="Consolas">
+                <span class="chk codicon codicon-check hid"></span><span>Consolas</span>
+                <span class="prev" style="font-family:'Consolas';">Aa</span>
+            </div>
+            <div class="font-opt" onclick="setFont('Source Code Pro',this)" data-font="Source Code Pro">
+                <span class="chk codicon codicon-check hid"></span><span>Source Code Pro</span>
+                <span class="prev" style="font-family:'Source Code Pro';">Aa</span>
+            </div>
+            <div class="font-sep"></div>
+            <div class="font-lbl">System</div>
+            <div class="font-opt" onclick="setFont('Courier New',this)" data-font="Courier New">
+                <span class="chk codicon codicon-check hid"></span><span>Courier New</span>
+                <span class="prev" style="font-family:'Courier New';">Aa</span>
+            </div>
+            <div class="font-opt" onclick="setFont('Arial',this)" data-font="Arial">
+                <span class="chk codicon codicon-check hid"></span><span>Arial</span>
+                <span class="prev" style="font-family:'Arial';">Aa</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<script>
+// === FILE ICON MAP ===
+const ICONS = {
+    py: 'fa-brands fa-python', java: 'fa-brands fa-java', js: 'fa-brands fa-js',
+    ts: 'fa-brands fa-js', html: 'fa-brands fa-html5', css: 'fa-brands fa-css3-alt',
+    php: 'fa-brands fa-php', go: 'fa-brands fa-golang', rs: 'fa-brands fa-rust',
+    swift: 'fa-brands fa-swift', jsx: 'fa-brands fa-react', tsx: 'fa-brands fa-react',
+    vue: 'fa-brands fa-vuejs', angular: 'fa-brands fa-angular',
+    rb: 'fa-solid fa-gem', c: 'fa-solid fa-file-code', cpp: 'fa-solid fa-file-code',
+    cs: 'fa-solid fa-file-code', kt: 'fa-solid fa-file-code', scala: 'fa-solid fa-file-code',
+    hs: 'fa-solid fa-file-code', ex: 'fa-solid fa-file-code', lua: 'fa-solid fa-file-code',
+    r: 'fa-solid fa-file-code', dart: 'fa-solid fa-file-code', sh: 'fa-solid fa-terminal',
+    bash: 'fa-solid fa-terminal', sql: 'fa-solid fa-database',
+    json: 'fa-solid fa-code', yaml: 'fa-solid fa-file-code', yml: 'fa-solid fa-file-code',
+    md: 'fa-brands fa-markdown', txt: 'fa-solid fa-file-lines',
+    xml: 'fa-solid fa-file-code', ini: 'fa-solid fa-gear', toml: 'fa-solid fa-gear',
+    env: 'fa-solid fa-gear', gitignore: 'fa-brands fa-git',
+    dockerfile: 'fa-brands fa-docker', lock: 'fa-solid fa-lock',
+    png: 'fa-solid fa-file', jpg: 'fa-solid fa-file', svg: 'fa-solid fa-file',
+    pdf: 'fa-solid fa-file',
+};
+
+// === FILE TREE DATA ===
+const FILE_TREE = [
+    { name: 'Open Editors', type: 'section', open: true },
+    { name: 'main.py', type: 'file', ext: 'py', indent: 0, active: true },
+    { name: 'utils.py', type: 'file', ext: 'py', indent: 0 },
+    { name: 'MAE WORKSPACE', type: 'section', open: true },
+    { name: 'src', type: 'folder', indent: 0, open: true, children: [
+        { name: 'main.py', ext: 'py', active: true },
+        { name: 'utils.py', ext: 'py' },
+        { name: 'models.py', ext: 'py' },
+        { name: 'config.py', ext: 'py' },
+        { name: 'ai_bridge.py', ext: 'py' },
+        { name: 'executor.py', ext: 'py' },
+    ]},
+    { name: 'static', type: 'folder', indent: 0, children: [
+        { name: 'index.html', ext: 'html' },
+        { name: 'style.css', ext: 'css' },
+        { name: 'app.js', ext: 'js' },
+    ]},
+    { name: 'templates', type: 'folder', indent: 0, children: [] },
+    { name: 'tests', type: 'folder', indent: 0, children: [
+        { name: 'test_ai_bridge.py', ext: 'py' },
+        { name: 'test_executor.py', ext: 'py' },
+    ]},
+    // Root files - ALL languages
+    { name: 'app.py', type: 'file', ext: 'py', indent: 0 },
+    { name: 'server.java', type: 'file', ext: 'java', indent: 0 },
+    { name: 'index.html', type: 'file', ext: 'html', indent: 0 },
+    { name: 'style.css', type: 'file', ext: 'css', indent: 0 },
+    { name: 'app.js', type: 'file', ext: 'js', indent: 0 },
+    { name: 'app.ts', type: 'file', ext: 'ts', indent: 0 },
+    { name: 'App.tsx', type: 'file', ext: 'tsx', indent: 0 },
+    { name: 'App.vue', type: 'file', ext: 'vue', indent: 0 },
+    { name: 'app.component.ts', type: 'file', ext: 'angular', indent: 0 },
+    { name: 'server.go', type: 'file', ext: 'go', indent: 0 },
+    { name: 'main.rs', type: 'file', ext: 'rs', indent: 0 },
+    { name: 'AppDelegate.swift', type: 'file', ext: 'swift', indent: 0 },
+    { name: 'app.php', type: 'file', ext: 'php', indent: 0 },
+    { name: 'main.c', type: 'file', ext: 'c', indent: 0 },
+    { name: 'main.cpp', type: 'file', ext: 'cpp', indent: 0 },
+    { name: 'Program.cs', type: 'file', ext: 'cs', indent: 0 },
+    { name: 'Main.kt', type: 'file', ext: 'kt', indent: 0 },
+    { name: 'Main.scala', type: 'file', ext: 'scala', indent: 0 },
+    { name: 'Main.hs', type: 'file', ext: 'hs', indent: 0 },
+    { name: 'app.ex', type: 'file', ext: 'ex', indent: 0 },
+    { name: 'app.lua', type: 'file', ext: 'lua', indent: 0 },
+    { name: 'app.R', type: 'file', ext: 'r', indent: 0 },
+    { name: 'main.dart', type: 'file', ext: 'dart', indent: 0 },
+    { name: 'app.rb', type: 'file', ext: 'rb', indent: 0 },
+    { name: 'run.sh', type: 'file', ext: 'sh', indent: 0 },
+    { name: 'query.sql', type: 'file', ext: 'sql', indent: 0 },
+    { name: 'package.json', type: 'file', ext: 'json', indent: 0 },
+    { name: 'docker-compose.yml', type: 'file', ext: 'yml', indent: 0 },
+    { name: 'config.yaml', type: 'file', ext: 'yaml', indent: 0 },
+    { name: 'README.md', type: 'file', ext: 'md', indent: 0 },
+    { name: 'CHANGELOG.md', type: 'file', ext: 'md', indent: 0 },
+    { name: 'data.xml', type: 'file', ext: 'xml', indent: 0 },
+    { name: '.env', type: 'file', ext: 'env', indent: 0 },
+    { name: '.env.example', type: 'file', ext: 'env', indent: 0 },
+    { name: '.gitignore', type: 'file', ext: 'gitignore', indent: 0 },
+    { name: 'Dockerfile', type: 'file', ext: 'dockerfile', indent: 0 },
+    { name: 'requirements.txt', type: 'file', ext: 'txt', indent: 0 },
+    { name: 'pyproject.toml', type: 'file', ext: 'toml', indent: 0 },
+    { name: 'Cargo.lock', type: 'file', ext: 'lock', indent: 0 },
+    { name: 'logo.png', type: 'file', ext: 'png', indent: 0 },
+    { name: 'preview.pdf', type: 'file', ext: 'pdf', indent: 0 },
+    { name: 'unknown.xyz', type: 'file', ext: 'xyz', indent: 0 },
+];
+
+// === TABS DATA ===
+const TABS = [
+    { name: 'main.py', ext: 'py', active: true },
+    { name: 'ai_bridge.py', ext: 'py' },
+    { name: 'index.html', ext: 'html' },
+    { name: 'server.go', ext: 'go' },
+    { name: 'main.rs', ext: 'rs' },
+];
+
+// === EDITOR DATA ===
+const EDITOR_LINES = [
+    '<span class="kw">import</span> <span class="param">os</span>',
+    '<span class="kw">from</span> <span class="param">pathlib</span> <span class="kw">import</span> <span class="type">Path</span>',
+    '<span class="kw">from</span> <span class="param">fastapi</span> <span class="kw">import</span> <span class="type">FastAPI</span>, <span class="type">HTTPException</span>',
+    '<span class="kw">from</span> <span class="param">pydantic</span> <span class="kw">import</span> <span class="type">BaseModel</span>',
+    '<span class="line-highlight"><span class="kw">from</span> <span class="param">app.core.ai_bridge</span> <span class="kw">import</span> <span class="type">AIBridge</span></span>',
+    '',
+    '<span class="cmt"># OpenCode Zen - Free models endpoint</span>',
+    '<span class="param">ZEN_URL</span> = <span class="str">"https://opencode.ai/zen/v1/chat/completions"</span>',
+    '<span class="param">ZEN_HEADERS</span> = {',
+    '    <span class="str">"Authorization"</span>: <span class="str">"Bearer public"</span>,',
+    '    <span class="str">"x-opencode-client"</span>: <span class="str">"cli"</span>,',
+    '    <span class="str">"x-opencode-project"</span>: <span class="str">"global"</span>,',
+    '}',
+    '',
+    '',
+    '<span class="kw">class</span> <span class="cls">ChatRequest</span>(<span class="type">BaseModel</span>):',
+    '    provider: <span class="type">str</span>',
+    '    model: <span class="type">str</span>',
+    '    messages: <span class="type">list</span>[<span class="type">dict</span>]',
+    '    stream: <span class="type">bool</span> = <span class="kw">False</span>',
+    '',
+    '',
+    '<span class="dec">@app</span>.<span class="fn">post</span>(<span class="str">"/api/ai/chat"</span>)',
+    '<span class="kw">async def</span> <span class="fn">chat</span>(<span class="param">req</span>: <span class="type">ChatRequest</span>):',
+    '    bridge = <span class="type">AIBridge</span>()',
+    '    <span class="kw">try</span>:',
+    '        <span class="kw">return await</span> bridge.<span class="fn">chat</span>(',
+    '            provider=req.provider,',
+    '            model=req.model,',
+    '            messages=req.messages,',
+];
+
+// === AI RESPONSES ===
+const AI_RESPONSES = [
+    {
+        q: /python|fastapi|backend/i,
+        a: `<div class="chat-msg-body">Oto przykład endpointu FastAPI z obsługą Pythona:</div>
+<div class="chat-code-block font-mono">
+<div class="line"><span class="kw">from</span> <span class="param">fastapi</span> <span class="kw">import</span> <span class="type">FastAPI</span></div>
+<div class="line"></div>
+<div class="line">app = <span class="type">FastAPI</span>()</div>
+<div class="line"></div>
+<div class="line"><span class="dec">@app</span>.<span class="fn">get</span>(<span class="str">"/api/status"</span>)</div>
+<div class="line"><span class="kw">async def</span> <span class="fn">status</span>():</div>
+<div class="line">    <span class="kw">return</span> {<span class="str">"status"</span>: <span class="str">"ok"</span>}</div>
+</div>`
+    },
+    {
+        q: /css|style|design|kolory/i,
+        a: `<div class="chat-msg-body">Zaktualizowałem kolory w <code>style.css</code>:</div>
+<div class="chat-code-block font-mono">
+<div class="line add"><span style="color:var(--accent-green);">:root {</span></div>
+<div class="line add"><span style="color:var(--accent-green);">    --bg-primary: #0d0d0d;</span></div>
+<div class="line add"><span style="color:var(--accent-green);">    --accent: #fab283;</span></div>
+<div class="line add"><span style="color:var(--accent-green);">}</span></div>
+</div>`
+    },
+    {
+        q: /test|pytest|testy/i,
+        a: `<div class="chat-msg-body">Utworzyłem test z pytest:</div>
+<div class="chat-code-block font-mono">
+<div class="line"><span class="kw">import</span> <span class="param">pytest</span></div>
+<div class="line"></div>
+<div class="line"><span class="dec">@pytest.mark.asyncio</span></div>
+<div class="line"><span class="kw">async def</span> <span class="fn">test_endpoint</span>():</div>
+<div class="line">    resp = <span class="kw">await</span> client.<span class="fn">get</span>(<span class="str">"/api/status"</span>)</div>
+<div class="line">    <span class="kw">assert</span> resp.status_code == <span class="num">200</span></div>
+</div>`
+    },
+    {
+        q: /git|commit|push|repo/i,
+        a: `<div class="chat-msg-body">Komendy git do uruchomienia:</div>
+<div class="chat-code-block font-mono">
+<div class="pline cmd">$ git add .</div>
+<div class="pline cmd">$ git commit -m "feat: add AI bridge"</div>
+<div class="pline cmd">$ git push origin main</div>
+</div>`
+    },
+    {
+        q: /docker|container|kontener/i,
+        a: `<div class="chat-msg-body">Oto Dockerfile dla tego projektu:</div>
+<div class="chat-code-block font-mono">
+<div class="line"><span class="kw">FROM</span> <span class="str">python:3.11-slim</span></div>
+<div class="line"><span class="kw">WORKDIR</span> /app</div>
+<div class="line"><span class="kw">COPY</span> requirements.txt .</div>
+<div class="line"><span class="kw">RUN</span> pip install -r requirements.txt</div>
+<div class="line"><span class="kw">COPY</span> . .</div>
+<div class="line"><span class="kw">CMD</span> [<span class="str">"uvicorn"</span>, <span class="str">"app.main:app"</span>]</div>
+</div>`
+    },
+    {
+        q: /help|pomoc|co umiesz/i,
+        a: `<div class="chat-msg-body">Jestem MAE AI Assistant. Mogę pomóc z:<br><br>
+- <strong>Python/FastAPI</strong> - tworzenie endpointów, modeli<br>
+- <strong>Frontend</strong> - HTML, CSS, JavaScript, React, Vue<br>
+- <strong>Bazy danych</strong> - SQL, SQLAlchemy<br>
+- <strong>AI/ML</strong> - integracja z API, modele<br>
+- <strong>DevOps</strong> - Docker, CI/CD<br>
+- <strong>Git</strong> - commity, branchowanie<br><br>
+Zapytaj mnie o cokolwiek!</div>`
+    },
+];
+
+// === RENDER FILE TREE ===
+function renderFileTree() {
+    const tree = document.getElementById('fileTree');
+    let html = '';
+    let indent = 0;
+
+    FILE_TREE.forEach(item => {
+        if (item.type === 'section') {
+            html += `<div class="tree-section-header"><span class="codicon codicon-chevron-${item.open ? 'down' : 'right'}"></span> ${item.name}</div>`;
+            return;
+        }
+        if (item.type === 'folder') {
+            indent = item.indent;
+            html += `<div class="tree-item">${'<span class="tree-indent"></span>'.repeat(indent)}<span class="fa-solid fa-folder"></span> ${item.name}</div>`;
+            if (item.children) {
+                item.children.forEach(child => {
+                    const icon = ICONS[child.ext] || 'fa-solid fa-file-circle-xmark';
+                    html += `<div class="tree-item${child.active ? ' active' : ''}">${'<span class="tree-indent"></span>'.repeat(indent + 1)}<span class="${icon}"></span> ${child.name}</div>`;
+                });
+            }
+            return;
+        }
+        const icon = ICONS[item.ext] || 'fa-solid fa-file-circle-xmark';
+        html += `<div class="tree-item${item.active ? ' active' : ''}">${'<span class="tree-indent"></span>'.repeat(item.indent || 0)}<span class="${icon}"></span> ${item.name}</div>`;
+    });
+
+    tree.innerHTML = html;
+}
+
+// === RENDER TABS ===
+function renderTabs() {
+    const bar = document.getElementById('tabsBar');
+    let html = '';
+    TABS.forEach(tab => {
+        const icon = ICONS[tab.ext] || 'fa-solid fa-file-circle-xmark';
+        html += `<div class="tab${tab.active ? ' active' : ''}"><span class="${icon}"></span><span>${tab.name}</span><span class="tab-x"><span class="codicon codicon-close"></span></span></div>`;
+    });
+    html += '<div class="tab tab-add"><span class="codicon codicon-add" style="font-size:14px;"></span></div>';
+    bar.innerHTML = html;
+}
+
+// === RENDER EDITOR ===
+function renderEditor() {
+    const gutter = document.getElementById('editorGutter');
+    const code = document.getElementById('editorCode');
+    let gutterHtml = '';
+    let codeHtml = '';
+    EDITOR_LINES.forEach((line, i) => {
+        gutterHtml += `<div>${i + 1}</div>`;
+        codeHtml += `<div class="line">${line}</div>`;
+    });
+    gutter.innerHTML = gutterHtml;
+    code.innerHTML = codeHtml;
+}
+
+// === CHAT FUNCTIONALITY ===
+function addMessage(role, content, time) {
+    const body = document.getElementById('chatBody');
+    const isUser = role === 'user';
+    const msg = document.createElement('div');
+    msg.className = 'chat-msg';
+    msg.innerHTML = `
+        <div class="chat-msg-head">
+            <span class="chat-msg-role ${isUser ? 'user' : 'ai'}">${isUser ? 'Ty' : 'MAE AI'}</span>
+            <span class="chat-msg-time">${time || new Date().toLocaleTimeString('pl', {hour:'2-digit', minute:'2-digit'})}</span>
+        </div>
+        <div class="chat-msg-body">${content}</div>
+    `;
+    body.appendChild(msg);
+    body.scrollTop = body.scrollHeight;
+}
+
+function addTypingIndicator() {
+    const body = document.getElementById('chatBody');
+    const msg = document.createElement('div');
+    msg.className = 'chat-msg';
+    msg.id = 'typingIndicator';
+    msg.innerHTML = `
+        <div class="chat-msg-head">
+            <span class="chat-msg-role ai">MAE AI</span>
+        </div>
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+    `;
+    body.appendChild(msg);
+    body.scrollTop = body.scrollHeight;
+}
+
+function removeTypingIndicator() {
+    const el = document.getElementById('typingIndicator');
+    if (el) el.remove();
+}
+
+function findResponse(input) {
+    for (const r of AI_RESPONSES) {
+        if (r.q.test(input)) return r.a;
+    }
+    return `<div class="chat-msg-body">Rozumiem! Pytałeś o: "<strong>${input}</strong>". Mogę pomóc z kodem, debugowaniem, czy tworzeniem nowych funkcji. Spróbuj zapytać o Python, CSS, testy, Docker lub Git!</div>`;
+}
+
+function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    addMessage('user', text);
+    input.value = '';
+
+    addTypingIndicator();
+
+    setTimeout(() => {
+        removeTypingIndicator();
+        const response = findResponse(text);
+        addMessage('ai', response);
+    }, 800 + Math.random() * 1200);
+}
+
+// === FONT SELECTOR ===
+function toggleFontDD(){const d=document.getElementById('fontDD');d.classList.toggle('show');if(d.classList.contains('show'))setTimeout(()=>document.addEventListener('click',closeFontDD),0)}
+function closeFontDD(e){const w=document.getElementById('fontWrap'),d=document.getElementById('fontDD');if(!w.contains(e.target)){d.classList.remove('show');document.removeEventListener('click',closeFontDD)}}
+function setFont(n,el){document.documentElement.style.setProperty('--editor-font',"'"+n+"'");document.querySelectorAll('.font-opt').forEach(i=>{i.classList.remove('active');i.querySelector('.chk').classList.add('hid')});el.classList.add('active');el.querySelector('.chk').classList.remove('hid');document.getElementById('fontLabel').textContent=n;try{localStorage.setItem('mae-font',n)}catch(e){}document.getElementById('fontDD').classList.remove('show')}
+(function(){try{const s=localStorage.getItem('mae-font');if(s){document.documentElement.style.setProperty('--editor-font',"'"+s+"'");document.getElementById('fontLabel').textContent=s;document.querySelectorAll('.font-opt').forEach(i=>{if(i.dataset.font===s){i.classList.add('active');i.querySelector('.chk').classList.remove('hid')}else{i.classList.remove('active');i.querySelector('.chk').classList.add('hid')}})}}catch(e){}})();
+
+// === INIT ===
+renderFileTree();
+renderTabs();
+renderEditor();
+
+document.getElementById('sendBtn').addEventListener('click', sendMessage);
+document.getElementById('chatInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .calculator {
+            background: #16213e;
+            border-radius: 20px;
+            padding: 25px;
+            width: 360px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .display {
+            background: #0f3460;
+            border-radius: 12px;
+            padding: 25px 20px;
+            margin-bottom: 20px;
+            text-align: right;
+            font-size: 2.8em;
+            font-weight: 300;
+            color: #e0dcd7;
+            min-height: 90px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-end;
+            overflow-wrap: break-word;
+            word-break: break-all;
+            line-height: 1.2;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 12px;
+            padding: 18px 0;
+            font-size: 1.5em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            color: #e0dcd7;
+        }
+
+        .btn:active {
+            transform: scale(0.93);
+        }
+
+        .btn.num {
+            background: #1a1a40;
+        }
+
+        .btn.num:hover {
+            background: #252550;
+        }
+
+        .btn.num.zero {
+            grid-column: span 2;
+        }
+
+        .btn.op {
+            background: #533483;
+        }
+
+        .btn.op:hover {
+            background: #6a44a0;
+        }
+
+        .btn.func {
+            background: #2d2d5e;
+        }
+
+        .btn.func:hover {
+            background: #3d3d78;
+        }
+
+        .btn.eq {
+            background: #e94560;
+            grid-column: span 1;
+        }
+
+        .btn.eq:hover {
+            background: #ff6b81;
+        }
+
+        @media (max-width: 400px) {
+            .calculator {
+                width: 100%;
+                margin: 20px;
+                padding: 20px;
+            }
+            .display {
+                font-size: 2.2em;
+                padding: 20px 15px;
+            }
+            .btn {
+                padding: 15px 0;
+                font-size: 1.3em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="display" id="display">0</div>
+        <div class="buttons">
+            <button class="btn func" data-value="C">C</button>
+            <button class="btn func" data-value="±">±</button>
+            <button class="btn func" data-value="%">%</button>
+            <button class="btn op" data-value="/">÷</button>
+
+            <button class="btn num" data-value="7">7</button>
+            <button class="btn num" data-value="8">8</button>
+            <button class="btn num" data-value="9">9</button>
+            <button class="btn op" data-value="*">×</button>
+
+            <button class="btn num" data-value="4">4</button>
+            <button class="btn num" data-value="5">5</button>
+            <button class="btn num" data-value="6">6</button>
+            <button class="btn op" data-value="-">−</button>
+
+            <button class="btn num" data-value="1">1</button>
+            <button class="btn num" data-value="2">2</button>
+            <button class="btn num" data-value="3">3</button>
+            <button class="btn op" data-value="+">+</button>
+
+            <button class="btn num zero" data-value="0">0</button>
+            <button class="btn num" data-value=".">.</button>
+            <button class="btn eq" data-value="=">=</button>
+        </div>
+    </div>
+
+    <script>
+        const display = document.getElementById('display');
+        let currentInput = '0';
+        let previousInput = '';
+        let operator = null;
+        let shouldResetDisplay = false;
+
+        function updateDisplay() {
+            display.textContent = currentInput;
+        }
+
+        function appendNumber(num) {
+            if (shouldResetDisplay) {
+                currentInput = '';
+                shouldResetDisplay = false;
+            }
+            if (num === '.' && currentInput.includes('.')) return;
+            if (currentInput === '0' && num !== '.') {
+                currentInput = num;
+            } else {
+                currentInput += num;
+            }
+            updateDisplay();
+        }
+
+        function chooseOperator(op) {
+            if (operator && !shouldResetDisplay) {
+                calculate();
+            }
+            previousInput = currentInput;
+            operator = op;
+            shouldResetDisplay = true;
+        }
+
+        function calculate() {
+            if (!operator || !previousInput) return;
+            const prev = parseFloat(previousInput);
+            const curr = parseFloat(currentInput);
+            if (isNaN(prev) || isNaN(curr)) return;
+
+            let result;
+            switch (operator) {
+                case '+': result = prev + curr; break;
+                case '-': result = prev - curr; break;
+                case '*': result = prev * curr; break;
+                case '/':
+                    if (curr === 0) {
+                        currentInput = 'Błąd';
+                        updateDisplay();
+                        resetState();
+                        return;
+                    }
+                    result = prev / curr;
+                    break;
+                default: return;
+            }
+
+            currentInput = String(parseFloat(result.toFixed(8)));
+            operator = null;
+            previousInput = '';
+            shouldResetDisplay = true;
+            updateDisplay();
+        }
+
+        function resetState() {
+            currentInput = '0';
+            previousInput = '';
+            operator = null;
+            shouldResetDisplay = false;
+        }
+
+        function clearAll() {
+            resetState();
+            updateDisplay();
+        }
+
+        function toggleSign() {
+            if (currentInput === '0') return;
+            currentInput = String(parseFloat(currentInput) * -1);
+            updateDisplay();
+        }
+
+        function percentage() {
+            currentInput = String(parseFloat(currentInput) / 100);
+            updateDisplay();
+        }
+
+        document.querySelector('.buttons').addEventListener('click', (e) => {
+            const btn = e.target.closest('.btn');
+            if (!btn) return;
+
+            const value = btn.dataset.value;
+
+            if (btn.classList.contains('num')) {
+                appendNumber(value);
+            } else if (btn.classList.contains('op')) {
+                chooseOperator(value);
+            } else if (btn.classList.contains('eq')) {
+                calculate();
+            } else if (btn.classList.contains('func')) {
+                switch (value) {
+                    case 'C': clearAll(); break;
+                    case '±': toggleSign(); break;
+                    case '%': percentage(); break;
+                }
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            const key = e.key;
+            if (key >= '0' && key <= '9') {
+                appendNumber(key);
+            } else if (key === '.') {
+                appendNumber('.');
+            } else if (key === '+' || key === '-' || key === '*' || key === '/') {
+                chooseOperator(key);
+            } else if (key === 'Enter' || key === '=') {
+                e.preventDefault();
+                calculate();
+            } else if (key === 'Backspace') {
+                if (currentInput.length > 1) {
+                    currentInput = currentInput.slice(0, -1);
+                } else {
+                    currentInput = '0';
+                }
+                updateDisplay();
+            } else if (key === 'Escape') {
+                clearAll();
+            }
+        });
+
+        updateDisplay();
+    </script>
+</body>
+</html>

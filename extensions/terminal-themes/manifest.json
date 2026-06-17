@@ -1,0 +1,15 @@
+{
+  "name": "terminal-themes",
+  "displayName": "Terminal themes",
+  "version": "1.0.0",
+  "description": "",
+  "author": "MAE",
+  "icon": "fa-solid fa-puzzle-piece",
+  "color": "#fab283",
+  "entryPoint": "",
+  "repository": "",
+  "startCommand": "",
+  "folder": "",
+  "executeCommand": "",
+  "capabilities": []
+}

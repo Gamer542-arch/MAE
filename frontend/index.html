@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAE - Make Anything Editor</title>
+<link rel="stylesheet" href="https://unpkg.com/@vscode/codicons@0.0.35/dist/codicon.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="app" id="app">
+    <!-- TITLEBAR -->
+    <div class="titlebar">
+        <div class="titlebar-drag">
+            <div class="titlebar-logo" style="background:linear-gradient(135deg,#fab283 0%,#e8704a 50%,#fc533a 100%);width:28px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:#0d0d0d;flex-shrink:0;margin-right:8px;letter-spacing:-1px;">⚡</div>
+            <div class="titlebar-menu">
+                <div class="titlebar-menu-item" onclick="M.fileNew()">File</div>
+                <div class="titlebar-menu-item">Edit</div>
+                <div class="titlebar-menu-item">View</div>
+                <div class="titlebar-menu-item">Go</div>
+                <div class="titlebar-menu-item" onclick="M.executeRun()">Run</div>
+                <div class="titlebar-menu-item">Terminal</div>
+                <div class="titlebar-menu-item">Help</div>
+            </div>
+            <div class="titlebar-search">
+                <span class="codicon codicon-search"></span>
+                <span>Szukaj MAE</span>
+                <kbd>Ctrl+K</kbd>
+            </div>
+        </div>
+        <div class="titlebar-right">
+            <button class="titlebar-btn" onclick="M.UI.togglePanel('chat')"><span class="codicon codicon-layout-sidebar-right"></span></button>
+            <button class="titlebar-btn" onclick="M.UI.showSettings()"><span class="codicon codicon-settings"></span></button>
+            <button class="titlebar-btn"><span class="codicon codicon-chrome-minimize"></span></button>
+            <button class="titlebar-btn"><span class="codicon codicon-chrome-maximize"></span></button>
+            <button class="titlebar-btn close"><span class="codicon codicon-chrome-close"></span></button>
+        </div>
+    </div>
+
+    <div class="main">
+        <!-- Activity Bar -->
+        <div class="activitybar">
+            <div class="ab-top">
+                <div class="ab-icon active" onclick="M.UI.showSidebar('explorer')" id="abExplorer"><span class="codicon codicon-files"></span></div>
+                <div class="ab-icon" onclick="M.UI.showSidebar('search')" id="abSearch"><span class="codicon codicon-search"></span></div>
+                <div class="ab-icon" onclick="M.UI.showSidebar('git')" id="abGit"><span class="codicon codicon-source-control"></span><span class="ab-badge">0</span></div>
+                <div class="ab-icon" onclick="M.UI.showSidebar('debug')" id="abDebug"><span class="codicon codicon-debug-alt"></span></div>
+                <div class="ab-icon" onclick="M.UI.togglePanel('chat');" id="abChat"><span class="codicon codicon-comment-discussion"></span></div>
+                <div class="ab-icon" onclick="M.UI.showSidebar('extensions')" id="abExt"><span class="codicon codicon-extensions"></span></div>
+                <div class="ab-icon" onclick="M.UI.showSidebar('skills')" id="abSkills"><span class="codicon codicon-mortar-board"></span></div>
+            </div>
+            <div class="ab-bottom">
+                <div class="ab-icon" onclick="M.UI.showSidebar('accounts')" id="abAccount"><span class="codicon codicon-account"></span></div>
+                <div class="ab-icon" onclick="M.UI.showSettings()"><span class="codicon codicon-settings-gear"></span></div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebarPanel">
+            <div class="sidebar-header">
+                <span class="sidebar-title" id="sidebarTitle">Explorer</span>
+                <div class="sidebar-actions" id="sidebarActions">
+                    <button class="sidebar-btn" onclick="M.Explorer.newFile()"><span class="codicon codicon-new-file"></span></button>
+                    <button class="sidebar-btn" onclick="M.Explorer.newFolder()"><span class="codicon codicon-new-folder"></span></button>
+                    <button class="sidebar-btn" onclick="M.Explorer.refresh()"><span class="codicon codicon-refresh"></span></button>
+                </div>
+            </div>
+            <div class="sidebar-search">
+                <div class="sidebar-search-wrap">
+                    <span class="codicon codicon-search"></span>
+                    <input class="sidebar-search-input" id="sidebarSearch" placeholder="Search files..." onkeydown="if(event.key==='Enter'){const v=this.value;const vw=STATE.sidebarView;if(vw==='explorer')M.Explorer.search(v);if(vw==='extensions')M.Extensions.search(v);if(vw==='search')M.Explorer.search(v)}">
+                </div>
+            </div>
+            <div class="sidebar-body" id="sidebarBody">
+                <div class="file-tree" id="fileTree">
+                    <div class="tree-section-header"><span class="codicon codicon-chevron-down"></span> MAE WORKSPACE</div>
+                    <div style="padding:20px;text-align:center;color:var(--text-muted);">
+                        <span class="codicon codicon-loading" style="animation:spin 1s infinite;"></span> Loading...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center -->
+        <div class="center">
+            <div class="tabs-bar" id="tabsBar">
+                <div id="tabsContent" style="display:flex;flex:1;overflow-x:auto;"></div>
+            </div>
+            <div class="center-body">
+                <div class="editor-panel" id="editorPanel">
+                    <div class="editor">
+                        <div class="editor-gutter font-mono-ui" id="editorGutter"></div>
+                        <textarea class="editor-code font-mono" id="editorCode" spellcheck="false" placeholder="Select a file from Explorer..."></textarea>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-tabs" id="panelTabs">
+                        <div class="panel-tab active" onclick="M.Terminal.showTab('terminal')"><span class="codicon codicon-terminal"></span> TERMINAL</div>
+                        <div class="panel-tab" onclick="M.Terminal.showTab('output')"><span class="codicon codicon-output"></span> OUTPUT</div>
+                        <div class="panel-tab" onclick="M.Terminal.showTab('debug')"><span class="codicon codicon-list-flat"></span> DEBUG</div>
+                        <div class="panel-right-btns">
+                            <button class="panel-rbtn" onclick="M.Terminal.runCode()"><span class="codicon codicon-play"></span></button>
+                            <button class="panel-rbtn" onclick="M.Terminal.clear()"><span class="codicon codicon-clear-all"></span></button>
+                            <button class="panel-rbtn" id="panelToggle" onclick="M.Terminal.toggle()"><span class="codicon codicon-chevron-up"></span></button>
+                        </div>
+                    </div>
+                    <div class="panel-content font-mono" id="terminalOutput">
+                        <div class="pline info">MAE Terminal v1.0 | Type commands below</div>
+                    </div>
+                    <div class="panel-content font-mono hidden" id="outputPanel">
+                        <div class="pline info">OUTPUT | System &amp; build messages appear here</div>
+                    </div>
+                    <div class="panel-content font-mono hidden" id="debugPanel">
+                        <div class="pline info">DEBUG | Variables &amp; breakpoints appear here</div>
+                    </div>
+                    <div class="terminal-input-line" id="terminalInputLine">
+                        <span class="terminal-prompt">>>> </span>
+                        <input class="terminal-input" id="terminalInput" placeholder="print('Hello') or dir" onkeydown="M.Terminal.handleKey(event)">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Chat Sidebar (always visible) -->
+        <div class="chat-sidebar" id="chatPanel">
+            <div class="chat-header">
+                <div class="chat-header-left">
+                    <span class="codicon codicon-comment-discussion"></span>
+                    <span class="chat-header-title" id="chatTitle">AI Chat</span>
+                    <span id="healthDot" style="width:6px;height:6px;border-radius:50%;background:var(--text-muted);display:inline-block;flex-shrink:0;"></span>
+                    <span id="sysPromptBadge" style="font-size:9px;color:var(--accent);padding:1px 6px;background:rgba(250,178,131,0.12);border-radius:8px;display:none;">SYSTEM</span>
+                </div>
+                <div class="chat-header-actions">
+                    <button class="chat-header-btn" onclick="M.Chat.newSession()"><span class="codicon codicon-add"></span></button>
+                    <button class="chat-header-btn" onclick="M.Chat.clear()"><span class="codicon codicon-clear-all"></span></button>
+                    <button class="chat-header-btn" onclick="M.UI.hideChat()"><span class="codicon codicon-close"></span></button>
+                </div>
+            </div>
+
+            <!-- Task Tracker -->
+            <div class="chat-task-tracker" id="taskTracker">
+                <div class="chat-task-header" onclick="this.parentElement.querySelector('.chat-task-items').classList.toggle('hidden')">
+                    <span class="codicon codicon-list-flat" style="font-size:13px;color:var(--accent);"></span>
+                    <span class="chat-task-title">Ukończono <span id="taskDone">0</span> z <span id="taskTotal">0</span> zadań</span>
+                    <span class="codicon codicon-chevron-down" style="font-size:11px;color:var(--text-muted);margin-left:auto;"></span>
+                </div>
+                <div class="chat-task-items hidden" id="taskItems"></div>
+            </div>
+
+            <div class="chat-body" id="chatBody"></div>
+
+                <div class="chat-input-area">
+                    <div class="chat-input-wrap">
+                        <textarea class="chat-input" id="chatInput" placeholder="Zapytaj..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();M.Chat.send()}"></textarea>
+                        <button class="chat-send-btn" onclick="M.Chat.send()"><span class="codicon codicon-send"></span></button>
+                    </div>
+                    <div class="chat-input-bar">
+                        <button class="chat-context-btn" title="Dodaj plik" onclick="M.Chat.addFileContext()"><span class="codicon codicon-add"></span></button>
+                        <select class="chat-mode-sel" id="chatModeSelect" onchange="M.Chat.setMode(this.value)">
+                            <option value="normal">Chat</option>
+                            <option value="build">Build</option>
+                            <option value="plan">Plan</option>
+                        </select>
+                        <select class="chat-provider-sel" id="chatProvider" onchange="M.Chat.loadModels()">
+                            <option value="zen">Zen</option>
+                            <option value="go">Go</option>
+                            <option value="ollama">Ollama</option>
+                        </select>
+                        <select class="chat-model-sel" id="chatModel"></select>
+                    </div>
+        </div>
+    </div>
+
+    <!-- STATUSBAR -->
+    <div class="statusbar">
+        <div class="sb-item" id="sbFile"><span class="codicon codicon-file"></span> No file</div>
+        <div class="sb-sep"></div>
+        <div class="sb-item" id="sbHealth"></div>
+        <div style="flex:1;"></div>
+        <div class="sb-item">UTF-8</div>
+        <div class="sb-sep"></div>
+        <div class="font-wrap" id="fontWrap">
+            <button class="font-btn" onclick="M.UI.toggleFontDD()">
+                <span class="codicon codicon-symbol-text"></span>
+                <span id="fontLabel">Comic Sans MS</span>
+            </button>
+            <div class="font-dd" id="fontDD"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal" onclick="if(event.target===this)M.UI.hideSettings()">
+    <div class="modal-box">
+        <div class="modal-head">
+            <span>Settings</span>
+            <button class="chat-header-btn" onclick="M.UI.hideSettings()"><span class="codicon codicon-close"></span></button>
+        </div>
+        <div class="settings-tabs">
+            <div class="settings-tab active" onclick="M.Settings.showTab('general')">General</div>
+            <div class="settings-tab" onclick="M.Settings.showTab('providers')">Providers</div>
+            <div class="settings-tab" onclick="M.Settings.showTab('github')">GitHub</div>
+            <div class="settings-tab" onclick="M.Settings.showTab('editor')">Editor</div>
+        </div>
+        <div class="settings-body" id="settingsBody"></div>
+    </div>
+</div>
+
+<style>
+.modal-overlay { display:none; position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.6); z-index:1000; justify-content:center; align-items:center; }
+.modal-overlay.show { display:flex; }
+.modal-box { background:var(--bg-surface); border:1px solid var(--border); border-radius:8px; width:500px; max-height:80vh; overflow:hidden; display:flex; flex-direction:column; }
+.modal-head { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border); color:var(--text); font-size:14px; font-weight:600; }
+.settings-tabs { display:flex; border-bottom:1px solid var(--border); padding:0 8px; }
+.settings-tab { padding:8px 16px; font-size:12px; cursor:pointer; color:var(--text-dim); border-bottom:2px solid transparent; }
+.settings-tab:hover { color:var(--text); }
+.settings-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+.settings-body { padding:16px; overflow-y:auto; }
+.settings-field { margin-bottom:14px; }
+.settings-label { font-size:11px; color:var(--text-dim); text-transform:uppercase; margin-bottom:4px; letter-spacing:0.5px; }
+.settings-input { width:100%; background:var(--bg-raised); border:1px solid var(--border); color:var(--text); padding:6px 10px; border-radius:4px; font-size:12px; font-family:inherit; }
+.settings-input:focus { border-color:var(--accent); outline:none; }
+.settings-select { width:100%; background:var(--bg-raised); border:1px solid var(--border); color:var(--text); padding:6px 10px; border-radius:4px; font-size:12px; }
+.chat-bar-item-sm { background:var(--bg-raised);border:1px solid var(--border); color:var(--text);padding:2px 6px;border-radius:4px;font-size:11px; }
+.hidden { display:none !important; }
+@keyframes spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+</style>
+
+<script src="/js/app.js?v=5"></script>
+</body>
+</html>

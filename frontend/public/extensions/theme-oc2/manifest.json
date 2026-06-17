@@ -1,0 +1,20 @@
+{
+  "name": "theme-oc2",
+  "displayName": "OpenCode OC-2 Dark",
+  "version": "1.0.0",
+  "description": "Dark theme based on OpenCode OC-2 color scheme",
+  "author": "MAE",
+  "icon": "fa-solid fa-palette",
+  "color": "#fab283",
+  "activated": true,
+  "capabilities": ["theme"],
+  "theme": {
+    "type": "dark",
+    "colors": {
+      "bg": "#0d0d0d",
+      "surface": "#141414",
+      "accent": "#fab283",
+      "text": "#e0dcd7"
+    }
+  }
+}

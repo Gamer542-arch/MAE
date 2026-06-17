@@ -1,0 +1,16 @@
+{
+  "name": "formatter",
+  "displayName": "Code Formatter",
+  "version": "1.0.0",
+  "description": "Auto-format code on save (Python: black, JS: prettier)",
+  "author": "MAE",
+  "icon": "fa-solid fa-indent",
+  "color": "#00ceb9",
+  "activated": false,
+  "capabilities": ["format"],
+  "settings": {
+    "formatOnSave": true,
+    "pythonFormatter": "black",
+    "jsFormatter": "prettier"
+  }
+}

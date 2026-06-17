@@ -1,0 +1,11 @@
+{
+  "name": "javascript",
+  "displayName": "JavaScript & Web Support",
+  "version": "1.0.0",
+  "description": "JavaScript/TypeScript, HTML, CSS support",
+  "author": "MAE",
+  "icon": "fa-brands fa-js",
+  "color": "#F7DF1E",
+  "activated": true,
+  "capabilities": ["syntax", "lint", "format", "debug"]
+}
