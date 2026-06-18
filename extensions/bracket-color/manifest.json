@@ -1,0 +1,13 @@
+﻿{
+    "capabilities":  [
+                         "colors",
+                         "brackets"
+                     ],
+    "version":  "1.0.0",
+    "color":  "#c586c0",
+    "displayName":  "Bracket Pair Colorizer",
+    "name":  "bracket-color",
+    "description":  "Colorized matching brackets",
+    "author":  "MAE",
+    "icon":  "fa-solid fa-border-all"
+}

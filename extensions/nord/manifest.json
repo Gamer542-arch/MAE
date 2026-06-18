@@ -1,0 +1,13 @@
+﻿{
+    "description":  "Arctic, north-bluish clean theme",
+    "capabilities":  [
+                         "theme"
+                     ],
+    "color":  "#88c0d0",
+    "version":  "1.0.0",
+    "activated":  false,
+    "author":  "Nord",
+    "name":  "nord",
+    "icon":  "fa-solid fa-palette",
+    "displayName":  "Nord"
+}

@@ -1,0 +1,13 @@
+﻿{
+    "capabilities":  [
+                         "autocomplete",
+                         "paths"
+                     ],
+    "version":  "1.0.0",
+    "color":  "#d7ba7d",
+    "displayName":  "Path Intellisense",
+    "name":  "path-intellisense",
+    "description":  "Autocompletes filenames and paths",
+    "author":  "MAE",
+    "icon":  "fa-solid fa-folder-open"
+}

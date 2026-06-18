@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalkulator</title>
+    <title>Kalkulator Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,67 +15,138 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #1a1a2e;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 20px;
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .calculator {
-            background: #16213e;
-            border-radius: 20px;
-            padding: 25px;
+            background: #1a1a2e;
+            border-radius: 28px;
+            padding: 28px;
             width: 360px;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+            max-width: 100%;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.03);
+            transition: box-shadow 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.3s ease;
+            animation: fadeInUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            transform: translateY(60px);
+            opacity: 0;
+        }
+
+        @keyframes fadeInUp {
+            0% {
+                opacity: 0;
+                transform: translateY(60px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .calculator:hover {
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
         }
 
         .display {
-            background: #0f3460;
-            border-radius: 12px;
-            padding: 25px 20px;
-            margin-bottom: 20px;
+            background: #12121c;
+            border-radius: 20px;
+            padding: 28px 24px;
+            margin-bottom: 24px;
             text-align: right;
-            font-size: 2.8em;
+            font-size: 3rem;
             font-weight: 300;
-            color: #e0dcd7;
-            min-height: 90px;
+            color: #f1f1f6;
+            min-height: 120px;
             display: flex;
             align-items: flex-end;
             justify-content: flex-end;
             overflow-wrap: break-word;
             word-break: break-all;
             line-height: 1.2;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.4);
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .display .display-value {
+            transition: opacity 0.15s ease, filter 0.15s ease;
+        }
+
+        .display .display-value.fade {
+            opacity: 0;
+            filter: blur(2px);
         }
 
         .buttons {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
+            gap: 14px;
         }
 
         .btn {
             border: none;
-            border-radius: 12px;
-            padding: 18px 0;
-            font-size: 1.5em;
+            border-radius: 16px;
+            padding: 20px 0;
+            font-size: 1.6rem;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.15s ease;
-            color: #e0dcd7;
+            color: #f1f1f6;
+            background: transparent;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Ripple effect */
+        .btn::after {
+            content: '';
+            display: block;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            background: radial-gradient(circle, rgba(255,255,255,0.4) 10%, transparent 10%) no-repeat 50% 50%;
+            transform: scale(10);
+            opacity: 0;
+            transition: transform 0.6s, opacity 1s;
+        }
+
+        .btn:active::after {
+            transform: scale(0);
+            opacity: 0.3;
+            transition: 0s;
         }
 
         .btn:active {
-            transform: scale(0.93);
+            transform: scale(0.94);
         }
 
         .btn.num {
-            background: #1a1a40;
+            background: #25253e;
         }
 
         .btn.num:hover {
-            background: #252550;
+            background: #2f2f55;
+            box-shadow: 0 0 25px rgba(100, 100, 255, 0.15);
         }
 
         .btn.num.zero {
@@ -80,89 +154,165 @@
         }
 
         .btn.op {
-            background: #533483;
+            background: #3a0ca3;
         }
 
         .btn.op:hover {
-            background: #6a44a0;
+            background: #4a1db8;
+            box-shadow: 0 0 25px rgba(100, 100, 255, 0.3);
         }
 
         .btn.func {
-            background: #2d2d5e;
+            background: #2d2d5f;
         }
 
         .btn.func:hover {
-            background: #3d3d78;
+            background: #3d3d7f;
+            box-shadow: 0 0 20px rgba(150, 150, 255, 0.15);
         }
 
         .btn.eq {
             background: #e94560;
-            grid-column: span 1;
+            background-image: linear-gradient(135deg, #e94560, #d13450);
         }
 
         .btn.eq:hover {
             background: #ff6b81;
+            background-image: linear-gradient(135deg, #ff6b81, #e94560);
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.5);
+        }
+
+        /* Quick pulse on click for visual feedback */
+        .btn.click-flash {
+            animation: clickFlash 0.3s ease;
+        }
+
+        @keyframes clickFlash {
+            0% { filter: brightness(1); }
+            50% { filter: brightness(1.4); }
+            100% { filter: brightness(1); }
         }
 
         @media (max-width: 400px) {
             .calculator {
-                width: 100%;
-                margin: 20px;
                 padding: 20px;
+                border-radius: 24px;
             }
             .display {
-                font-size: 2.2em;
-                padding: 20px 15px;
+                font-size: 2.2rem;
+                padding: 20px 18px;
+                min-height: 90px;
             }
             .btn {
-                padding: 15px 0;
-                font-size: 1.3em;
+                padding: 16px 0;
+                font-size: 1.4rem;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .calculator {
+                padding: 16px;
+            }
+            .display {
+                font-size: 1.8rem;
+                padding: 16px 14px;
+                min-height: 80px;
+            }
+            .btn {
+                padding: 14px 0;
+                font-size: 1.2rem;
+            }
+            .buttons {
+                gap: 10px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="calculator">
-        <div class="display" id="display">0</div>
+    <div class="calculator" role="application" aria-label="Kalkulator">
+        <div class="display" id="display" aria-live="polite">
+            <span class="display-value" id="displayValue">0</span>
+        </div>
         <div class="buttons">
-            <button class="btn func" data-value="C">C</button>
-            <button class="btn func" data-value="±">±</button>
-            <button class="btn func" data-value="%">%</button>
-            <button class="btn op" data-value="/">÷</button>
+            <button class="btn func" data-value="C" aria-label="Wyczyść">C</button>
+            <button class="btn func" data-value="±" aria-label="Zmień znak">±</button>
+            <button class="btn func" data-value="%" aria-label="Procent">%</button>
+            <button class="btn op" data-value="/" aria-label="Dzielenie">÷</button>
 
-            <button class="btn num" data-value="7">7</button>
-            <button class="btn num" data-value="8">8</button>
-            <button class="btn num" data-value="9">9</button>
-            <button class="btn op" data-value="*">×</button>
+            <button class="btn num" data-value="7" aria-label="7">7</button>
+            <button class="btn num" data-value="8" aria-label="8">8</button>
+            <button class="btn num" data-value="9" aria-label="9">9</button>
+            <button class="btn op" data-value="*" aria-label="Mnożenie">×</button>
 
-            <button class="btn num" data-value="4">4</button>
-            <button class="btn num" data-value="5">5</button>
-            <button class="btn num" data-value="6">6</button>
-            <button class="btn op" data-value="-">−</button>
+            <button class="btn num" data-value="4" aria-label="4">4</button>
+            <button class="btn num" data-value="5" aria-label="5">5</button>
+            <button class="btn num" data-value="6" aria-label="6">6</button>
+            <button class="btn op" data-value="-" aria-label="Odejmowanie">−</button>
 
-            <button class="btn num" data-value="1">1</button>
-            <button class="btn num" data-value="2">2</button>
-            <button class="btn num" data-value="3">3</button>
-            <button class="btn op" data-value="+">+</button>
+            <button class="btn num" data-value="1" aria-label="1">1</button>
+            <button class="btn num" data-value="2" aria-label="2">2</button>
+            <button class="btn num" data-value="3" aria-label="3">3</button>
+            <button class="btn op" data-value="+" aria-label="Dodawanie">+</button>
 
-            <button class="btn num zero" data-value="0">0</button>
-            <button class="btn num" data-value=".">.</button>
-            <button class="btn eq" data-value="=">=</button>
+            <button class="btn num zero" data-value="0" aria-label="0">0</button>
+            <button class="btn num" data-value="." aria-label="Przecinek">,</button>
+            <button class="btn eq" data-value="=" aria-label="Równa się">=</button>
         </div>
     </div>
 
     <script>
         const display = document.getElementById('display');
+        const displayValue = document.getElementById('displayValue');
         let currentInput = '0';
         let previousInput = '';
         let operator = null;
         let shouldResetDisplay = false;
+        let isError = false;
 
         function updateDisplay() {
-            display.textContent = currentInput;
+            displayValue.textContent = currentInput;
+            adjustFontSize();
+            // Animate number change briefly
+            displayValue.classList.remove('fade');
+            void displayValue.offsetWidth; // reflow
+            displayValue.classList.add('fade');
+        }
+
+        function adjustFontSize() {
+            const maxLength = 12;
+            const len = currentInput.length;
+            if (len > maxLength) {
+                const baseSize = 3; // rem
+                const minSize = 1.2;
+                const newSize = Math.max(minSize, baseSize - (len - maxLength) * 0.15);
+                displayValue.style.fontSize = `${newSize}rem`;
+            } else {
+                displayValue.style.fontSize = '';
+            }
+        }
+
+        function formatNumber(num) {
+            if (!isFinite(num)) return 'Błąd';
+            let str = String(num);
+            if (str.includes('.') && str.length > 15) {
+                str = num.toPrecision(10);
+                str = String(parseFloat(str));
+            }
+            return str;
+        }
+
+        function flashButton(btnElement) {
+            if (!btnElement) return;
+            btnElement.classList.remove('click-flash');
+            void btnElement.offsetWidth;
+            btnElement.classList.add('click-flash');
         }
 
         function appendNumber(num) {
+            if (isError) {
+                currentInput = '';
+                isError = false;
+            }
             if (shouldResetDisplay) {
                 currentInput = '';
                 shouldResetDisplay = false;
@@ -177,6 +327,7 @@
         }
 
         function chooseOperator(op) {
+            if (isError) return;
             if (operator && !shouldResetDisplay) {
                 calculate();
             }
@@ -186,10 +337,11 @@
         }
 
         function calculate() {
+            if (isError) return;
             if (!operator || !previousInput) return;
-            const prev = parseFloat(previousInput);
-            const curr = parseFloat(currentInput);
-            if (isNaN(prev) || isNaN(curr)) return;
+            const prev = Number(previousInput);
+            const curr = Number(currentInput);
+            if (!isFinite(prev) || !isFinite(curr)) return;
 
             let result;
             switch (operator) {
@@ -198,9 +350,7 @@
                 case '*': result = prev * curr; break;
                 case '/':
                     if (curr === 0) {
-                        currentInput = 'Błąd';
-                        updateDisplay();
-                        resetState();
+                        setError();
                         return;
                     }
                     result = prev / curr;
@@ -208,10 +358,23 @@
                 default: return;
             }
 
-            currentInput = String(parseFloat(result.toFixed(8)));
+            if (Number.isInteger(result) && Math.abs(result) < Number.MAX_SAFE_INTEGER) {
+                currentInput = String(result);
+            } else {
+                currentInput = formatNumber(result);
+            }
             operator = null;
             previousInput = '';
             shouldResetDisplay = true;
+            updateDisplay();
+        }
+
+        function setError() {
+            currentInput = 'Błąd';
+            isError = true;
+            shouldResetDisplay = true;
+            operator = null;
+            previousInput = '';
             updateDisplay();
         }
 
@@ -220,27 +383,52 @@
             previousInput = '';
             operator = null;
             shouldResetDisplay = false;
+            isError = false;
+            updateDisplay();
         }
 
         function clearAll() {
             resetState();
-            updateDisplay();
         }
 
         function toggleSign() {
+            if (isError) return;
             if (currentInput === '0') return;
-            currentInput = String(parseFloat(currentInput) * -1);
+            const num = Number(currentInput);
+            if (Object.is(num, -0)) return;
+            currentInput = formatNumber(-num);
             updateDisplay();
         }
 
         function percentage() {
-            currentInput = String(parseFloat(currentInput) / 100);
+            if (isError) return;
+            const num = Number(currentInput);
+            if (!isFinite(num)) return;
+            currentInput = formatNumber(num / 100);
             updateDisplay();
         }
 
+        function backspace() {
+            if (isError) {
+                resetState();
+                return;
+            }
+            if (currentInput.length > 1) {
+                currentInput = currentInput.slice(0, -1);
+                if (currentInput === '-') currentInput = '0';
+            } else {
+                currentInput = '0';
+            }
+            updateDisplay();
+        }
+
+        // Event listeners
         document.querySelector('.buttons').addEventListener('click', (e) => {
             const btn = e.target.closest('.btn');
             if (!btn) return;
+
+            // Visual flash
+            flashButton(btn);
 
             const value = btn.dataset.value;
 
@@ -260,28 +448,61 @@
         });
 
         document.addEventListener('keydown', (e) => {
+            if (e.target !== document.body && e.target !== document.documentElement) {
+                return;
+            }
+
             const key = e.key;
+            // Map button value to a possible button element to flash
+            let targetBtn = null;
+
             if (key >= '0' && key <= '9') {
                 appendNumber(key);
+                targetBtn = document.querySelector(`[data-value="${key}"]`);
             } else if (key === '.') {
                 appendNumber('.');
-            } else if (key === '+' || key === '-' || key === '*' || key === '/') {
-                chooseOperator(key);
+                targetBtn = document.querySelector(`[data-value="."]`);
+            } else if (key === ',') {
+                appendNumber('.');
+                targetBtn = document.querySelector(`[data-value="."]`);
+            } else if (key === '+') {
+                chooseOperator('+');
+                targetBtn = document.querySelector(`[data-value="+"]`);
+            } else if (key === '-') {
+                chooseOperator('-');
+                targetBtn = document.querySelector(`[data-value="-"]`);
+            } else if (key === '*') {
+                chooseOperator('*');
+                targetBtn = document.querySelector(`[data-value="*"]`);
+            } else if (key === '/') {
+                chooseOperator('/');
+                targetBtn = document.querySelector(`[data-value="/"]`);
             } else if (key === 'Enter' || key === '=') {
                 e.preventDefault();
                 calculate();
+                targetBtn = document.querySelector(`[data-value="="]`);
             } else if (key === 'Backspace') {
-                if (currentInput.length > 1) {
-                    currentInput = currentInput.slice(0, -1);
-                } else {
-                    currentInput = '0';
-                }
-                updateDisplay();
+                backspace();
+                // No specific button
             } else if (key === 'Escape') {
                 clearAll();
+                targetBtn = document.querySelector(`[data-value="C"]`);
+            } else if (key === '%') {
+                percentage();
+                targetBtn = document.querySelector(`[data-value="%"]`);
             }
+
+            if (targetBtn) flashButton(targetBtn);
         });
 
+        // Prevent default touch on buttons to avoid double activation
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+            });
+        });
+
+        // Initial display
         updateDisplay();
     </script>
 </body>

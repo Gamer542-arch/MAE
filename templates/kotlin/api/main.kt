@@ -1,0 +1,1 @@
+﻿import io.ktor.server.engine.*\nimport io.ktor.server.netty.*\nimport io.ktor.server.response.*\nimport io.ktor.server.routing.*\n\nfun main() {\n    embeddedServer(Netty, port = 3000) {\n        routing {\n            get("/") {\n                call.respond(mapOf("message" to "Hello from {name}!"))\n            }\n        }\n    }.start(wait = true)\n}\n

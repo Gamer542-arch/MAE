@@ -34,6 +34,16 @@ async def read_file(path: str = Query(...)):
         raise HTTPException(status_code=404, detail=str(e))
 
 
+@router.get("/getclickedfile")
+async def get_clicked_file(path: str = Query(...)):
+    try:
+        content = fm.read(path)
+        name = path.split("/")[-1].split("\\")[-1]
+        return {"name": name, "content": content, "path": path}
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 @router.post("/write")
 async def write_file(req: WriteRequest):
     try:

@@ -1,0 +1,1 @@
+﻿const http = require("http");\nconst server = http.createServer((req,res)=>{res.writeHead(200);res.end(JSON.stringify({message:"Hello from {name}!"}));});\nserver.listen(3000,()=>console.log("{name} on :3000"));\n

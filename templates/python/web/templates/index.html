@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{name}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>{name}</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <ul class="flashes">
+            {% for category, message in messages %}
+            <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% endwith %}
+
+        {% if error %}
+        <p class="error">{{ error }}</p>
+        {% endif %}
+
+        <form action="{{ url_for('add') }}" method="POST" class="add-form">
+            <input type="text" name="title" placeholder="What needs to be done?" required>
+            <button type="submit">Add</button>
+        </form>
+
+        <ul class="task-list">
+            {% for task in tasks %}
+            <li class="{% if task.done %}done{% endif %}">
+                <a href="{{ url_for('toggle', task_id=task.id) }}" class="toggle">
+                    {% if task.done %}&#x2611;{% else %}&#x2610;{% endif %}
+                </a>
+                <span class="title">{{ task.title }}</span>
+                <a href="{{ url_for('delete', task_id=task.id) }}" class="delete" onclick="return confirm('Delete this task?')">&times;</a>
+            </li>
+            {% else %}
+            <li class="empty">No tasks yet. Add one above!</li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

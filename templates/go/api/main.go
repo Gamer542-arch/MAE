@@ -1,0 +1,1 @@
+﻿package main\n\nimport (\n\t"encoding/json"\n\t"net/http"\n)\n\nfunc main() {\n\thttp.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {\n\t\tjson.NewEncoder(w).Encode(map[string]string{"message":"Hello from {name}!"})\n\t})\n\thttp.ListenAndServe(":3000", nil)\n}\n

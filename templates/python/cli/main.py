@@ -1,0 +1,1 @@
+﻿""" {name} — CLI Tool """\n\nimport argparse\n\ndef main():\n    parser = argparse.ArgumentParser(description="{name}")\n    parser.add_argument("--name", default="World")\n    args = parser.parse_args()\n    print(f"Hello, {args.name}!")\n\nif __name__ == "__main__":\n    main()\n

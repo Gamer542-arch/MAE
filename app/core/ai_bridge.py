@@ -7,7 +7,27 @@ from app.config import (
     ZEN_URL, ZEN_HEADERS, ZEN_MODELS,
     GO_URL, GO_API_KEY, GO_MODELS,
     OLLAMA_URL,
+    OPENAI_KEY, OPENAI_URL, OPENAI_MODELS,
+    ANTHROPIC_KEY, ANTHROPIC_URL, ANTHROPIC_MODELS,
+    GROQ_KEY, GROQ_URL, GROQ_MODELS,
+    DEEPSEEK_KEY, DEEPSEEK_URL, DEEPSEEK_MODELS,
+    MISTRAL_KEY, MISTRAL_URL, MISTRAL_MODELS,
+    OPENROUTER_KEY, OPENROUTER_URL, OPENROUTER_MODELS,
+    LMSTUDIO_URL, LMSTUDIO_MODELS,
 )
+
+PROVIDER_MAP = {
+    "zen": {"url": ZEN_URL, "headers": ZEN_HEADERS, "models": ZEN_MODELS, "key": None, "format": "openai"},
+    "go": {"url": GO_URL, "headers": None, "models": GO_MODELS, "key": GO_API_KEY, "format": "openai"},
+    "ollama": {"url": urljoin(OLLAMA_URL, "/v1/chat/completions"), "headers": None, "models": ["llama3.2", "codellama", "qwen2.5-coder", "deepseek-r1"], "key": None, "format": "openai"},
+    "openai": {"url": OPENAI_URL, "headers": None, "models": OPENAI_MODELS, "key": OPENAI_KEY, "format": "openai"},
+    "anthropic": {"url": ANTHROPIC_URL, "headers": None, "models": ANTHROPIC_MODELS, "key": ANTHROPIC_KEY, "format": "anthropic"},
+    "groq": {"url": GROQ_URL, "headers": None, "models": GROQ_MODELS, "key": GROQ_KEY, "format": "openai"},
+    "deepseek": {"url": DEEPSEEK_URL, "headers": None, "models": DEEPSEEK_MODELS, "key": DEEPSEEK_KEY, "format": "openai"},
+    "mistral": {"url": MISTRAL_URL, "headers": None, "models": MISTRAL_MODELS, "key": MISTRAL_KEY, "format": "openai"},
+    "openrouter": {"url": OPENROUTER_URL, "headers": None, "models": OPENROUTER_MODELS, "key": OPENROUTER_KEY, "format": "openai"},
+    "lmstudio": {"url": LMSTUDIO_URL, "headers": None, "models": LMSTUDIO_MODELS, "key": None, "format": "openai"},
+}
 
 
 class AIBridge:
@@ -31,89 +51,98 @@ class AIBridge:
         messages: list[dict],
         stream: bool = False,
     ) -> dict | AsyncIterator[dict]:
-        if provider == "zen":
-            return await self._zen_chat(model, messages, stream)
-        elif provider == "go":
-            return await self._go_chat(model, messages, stream)
-        elif provider == "ollama":
-            return await self._ollama_chat(model, messages, stream)
-        else:
+        if provider not in PROVIDER_MAP:
             raise ValueError(f"Unknown provider: {provider}")
 
+        cfg = PROVIDER_MAP[provider]
+
+        if cfg["format"] == "openai":
+            return await self._openai_compat(provider, cfg, model, messages, stream)
+        elif cfg["format"] == "anthropic":
+            return await self._anthropic_chat(cfg, model, messages, stream)
+        else:
+            raise ValueError(f"Unknown format: {cfg['format']}")
+
     def models(self, provider: str) -> list[str]:
-        if provider == "zen":
-            return ZEN_MODELS
-        elif provider == "go":
-            return GO_MODELS
-        elif provider == "ollama":
-            return ["llama3.2", "codellama", "qwen2.5-coder", "deepseek-r1"]
+        if provider in PROVIDER_MAP:
+            return PROVIDER_MAP[provider]["models"]
         return []
 
     async def health(self) -> dict:
-        status = {"zen": False, "go": False, "ollama": False}
-        try:
-            client = await self._get_client()
-            r = await client.get(ZEN_URL.replace("/chat/completions", "/models"), headers=ZEN_HEADERS, timeout=5)
-            status["zen"] = r.status_code < 500
-        except Exception:
-            pass
-        try:
-            if GO_API_KEY and not GO_API_KEY.startswith("sk-go-xxx"):
+        status = {}
+        for name, cfg in PROVIDER_MAP.items():
+            try:
+                if cfg["key"] and cfg["key"].startswith("sk-xxx"):
+                    status[name] = False
+                    continue
                 client = await self._get_client()
-                r = await client.get(GO_URL.replace("/chat/completions", "/models"), headers={"Authorization": f"Bearer {GO_API_KEY}"}, timeout=5)
-                status["go"] = r.status_code < 500
-        except Exception:
-            pass
-        try:
-            client = await self._get_client()
-            r = await client.get(urljoin(OLLAMA_URL, "/api/tags"), timeout=3)
-            status["ollama"] = r.status_code < 500
-        except Exception:
-            pass
+                headers = self._headers(cfg)
+                check_url = cfg["url"].replace("/chat/completions", "/models")
+                r = await client.get(check_url, headers=headers, timeout=5)
+                status[name] = r.status_code < 500
+            except Exception:
+                status[name] = False
         return status
 
-    async def _zen_chat(self, model: str, messages: list[dict], stream: bool) -> dict | AsyncIterator[dict]:
+    def _headers(self, cfg: dict) -> dict:
+        h = {}
+        if cfg["headers"]:
+            h.update(cfg["headers"])
+        if cfg["key"]:
+            h["Authorization"] = f"Bearer {cfg['key']}"
+        return h
+
+    async def _openai_compat(self, provider: str, cfg: dict, model: str, messages: list[dict], stream: bool) -> dict | AsyncIterator[dict]:
         client = await self._get_client()
-        payload = {
-            "model": model,
-            "messages": messages,
-            "stream": stream,
-        }
+        headers = self._headers(cfg)
+        payload = {"model": model, "messages": messages, "stream": stream}
         if stream:
-            return self._stream_response(client, ZEN_URL, payload, ZEN_HEADERS)
-        r = await client.post(ZEN_URL, json=payload, headers=ZEN_HEADERS)
+            return self._stream_response(client, cfg["url"], payload, headers)
+        r = await client.post(cfg["url"], json=payload, headers=headers)
         r.raise_for_status()
         return r.json()
 
-    async def _go_chat(self, model: str, messages: list[dict], stream: bool) -> dict | AsyncIterator[dict]:
-        if not GO_API_KEY or GO_API_KEY.startswith("sk-go-xxx"):
-            raise ValueError("GO_API_KEY not configured. Set it in .env")
-        client = await self._get_client()
-        headers = {"Authorization": f"Bearer {GO_API_KEY}"}
-        payload = {
-            "model": model,
-            "messages": messages,
-            "stream": stream,
-        }
-        if stream:
-            return self._stream_response(client, GO_URL, payload, headers)
-        r = await client.post(GO_URL, json=payload, headers=headers)
-        r.raise_for_status()
-        return r.json()
+    async def _anthropic_chat(self, cfg: dict, model: str, messages: list[dict], stream: bool) -> dict:
+        if not cfg["key"] or cfg["key"].startswith("sk-xxx"):
+            raise ValueError("ANTHROPIC_API_KEY not configured")
 
-    async def _ollama_chat(self, model: str, messages: list[dict], stream: bool) -> dict | AsyncIterator[dict]:
         client = await self._get_client()
-        url = urljoin(OLLAMA_URL, "/v1/chat/completions")
+        headers = {
+            "x-api-key": cfg["key"],
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json",
+        }
+
+        # Extract system prompt, convert messages to Anthropic format
+        system_prompt = ""
+        anthropic_messages = []
+        for msg in messages:
+            if msg["role"] == "system":
+                system_prompt = msg["content"]
+            else:
+                anthropic_messages.append({"role": msg["role"], "content": msg["content"]})
+
         payload = {
             "model": model,
-            "messages": messages,
-            "stream": stream,
+            "messages": anthropic_messages,
+            "max_tokens": 4096,
         }
-        if stream:
-            return self._stream_response(client, url, payload)
-        r = await client.post(url, json=payload)
+        if system_prompt:
+            payload["system"] = system_prompt
+
+        r = await client.post(cfg["url"], json=payload, headers=headers)
         r.raise_for_status()
-        return r.json()
+        data = r.json()
+
+        # Convert Anthropic response to OpenAI format
+        return {
+            "choices": [{
+                "message": {
+                    "content": data["content"][0]["text"],
+                    "role": "assistant",
+                }
+            }]
+        }
 
     async def _stream_response(self, client: httpx.AsyncClient, url: str, payload: dict, headers: dict = None) -> AsyncIterator[dict]:
         headers = headers or {}

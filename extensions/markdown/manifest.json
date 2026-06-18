@@ -1,0 +1,13 @@
+﻿{
+    "capabilities":  [
+                         "preview",
+                         "markdown"
+                     ],
+    "version":  "1.0.0",
+    "color":  "#519aba",
+    "displayName":  "Markdown Preview",
+    "name":  "markdown",
+    "description":  "Live markdown rendering preview",
+    "author":  "MAE",
+    "icon":  "fa-brands fa-markdown"
+}

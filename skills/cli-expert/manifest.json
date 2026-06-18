@@ -1,0 +1,11 @@
+﻿{
+    "description":  "Command-line tools",
+    "color":  "#00BCD4",
+    "version":  "1.0.0",
+    "activated":  true,
+    "author":  "MAE",
+    "name":  "cli-expert",
+    "icon":  "fa-solid fa-terminal",
+    "prompt":  "You are a CLI expert. Build command-line tools with argparse, click, commander, and proper output formatting.",
+    "displayName":  "CLI Expert"
+}

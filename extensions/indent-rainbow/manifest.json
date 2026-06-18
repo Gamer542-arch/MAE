@@ -1,0 +1,13 @@
+﻿{
+    "capabilities":  [
+                         "colors",
+                         "indent"
+                     ],
+    "version":  "1.0.0",
+    "color":  "#ff7b72",
+    "displayName":  "Indent Rainbow",
+    "name":  "indent-rainbow",
+    "description":  "Rainbow indentation visualization",
+    "author":  "MAE",
+    "icon":  "fa-solid fa-rainbow"
+}

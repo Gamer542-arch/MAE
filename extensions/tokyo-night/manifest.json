@@ -1,0 +1,13 @@
+﻿{
+    "description":  "Dark theme inspired by Tokyo\u0027s night lights",
+    "capabilities":  [
+                         "theme"
+                     ],
+    "color":  "#7aa2f7",
+    "version":  "1.0.0",
+    "activated":  false,
+    "author":  "Enkia",
+    "name":  "tokyo-night",
+    "icon":  "fa-solid fa-palette",
+    "displayName":  "Tokyo Night"
+}

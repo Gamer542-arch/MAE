@@ -1,0 +1,13 @@
+﻿{
+    "description":  "One Dark theme from Atom",
+    "capabilities":  [
+                         "theme"
+                     ],
+    "color":  "#61afef",
+    "version":  "1.0.0",
+    "activated":  false,
+    "author":  "Binaryify",
+    "name":  "one-dark-pro",
+    "icon":  "fa-solid fa-palette",
+    "displayName":  "One Dark Pro"
+}

@@ -1,0 +1,19 @@
+/* my-html-project — Styles */
+
+body {
+    font-family: -apple-system, sans-serif;
+    background: #0d0d0d;
+    color: #e0dcd7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+h1 {
+    background: linear-gradient(135deg, #fab283, #fc533a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}

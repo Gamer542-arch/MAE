@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse
-from app.api import ai, files, execute, github, extensions, skills
+from app.api import ai, files, execute, github, extensions, skills, projects
 from app.config import HOST, PORT
 import uvicorn
 from pathlib import Path
@@ -23,6 +23,7 @@ app.include_router(execute.router, prefix="/api/execute", tags=["Execute"])
 app.include_router(github.router, prefix="/api/github", tags=["GitHub"])
 app.include_router(extensions.router, prefix="/api/extensions", tags=["Extensions"])
 app.include_router(skills.router, prefix="/api/skills", tags=["Skills"])
+app.include_router(projects.router, prefix="/api/projects", tags=["Projects"])
 
 app.mount("/css", StaticFiles(directory="frontend/css"), name="css")
 app.mount("/js", StaticFiles(directory="frontend/js"), name="js")
@@ -38,6 +39,31 @@ async def root():
 @app.get("/docs")
 async def docs():
     return FileResponse("frontend/docs.html")
+
+
+@app.get("/extensions")
+async def extensions_page():
+    return FileResponse("frontend/extensions.html")
+
+
+@app.get("/themes")
+async def themes_page():
+    return FileResponse("frontend/themes.html")
+
+
+@app.get("/studio")
+async def studio_page():
+    return FileResponse("frontend/ai-studio.html")
+
+
+@app.get("/welcome")
+async def welcome_page():
+    return FileResponse("frontend/welcome.html")
+
+
+@app.get("/screen")
+async def screen_page():
+    return FileResponse("frontend/screen.html")
 
 
 @app.get("/preview/{file_path:path}")

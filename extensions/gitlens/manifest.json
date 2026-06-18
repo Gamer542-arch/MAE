@@ -1,0 +1,13 @@
+﻿{
+    "capabilities":  [
+                         "git",
+                         "lenses"
+                     ],
+    "version":  "1.0.0",
+    "color":  "#F05032",
+    "displayName":  "GitLens",
+    "name":  "gitlens",
+    "description":  "Git blame, history, and commit lenses",
+    "author":  "MAE",
+    "icon":  "fa-solid fa-code-branch"
+}

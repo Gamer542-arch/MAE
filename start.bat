@@ -23,8 +23,9 @@ start "MAE-Server" python -m uvicorn app.main:app --host localhost --port 8000 -
 timeout /t 3 /nobreak >nul
 
 echo ==========================================
-echo   🌐 Open: http://localhost:8000
-echo   📚 Docs: http://localhost:8000/docs
+echo   Ы�? Open: http://localhost:8000
+echo   Ы"� Studio: http://localhost:8000/studio
+echo   Ы�? Docs: http://localhost:8000/docs
 echo ==========================================
 echo.
 

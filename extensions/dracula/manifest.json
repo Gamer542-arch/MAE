@@ -1,0 +1,13 @@
+﻿{
+    "description":  "Popular Dracula theme with purple accents",
+    "capabilities":  [
+                         "theme"
+                     ],
+    "color":  "#bd93f9",
+    "version":  "1.0.0",
+    "activated":  false,
+    "author":  "Dracula",
+    "name":  "dracula",
+    "icon":  "fa-solid fa-palette",
+    "displayName":  "Dracula"
+}

@@ -1,15 +1,13 @@
-{
-  "name": "terminal-themes",
-  "displayName": "Terminal themes",
-  "version": "1.0.0",
-  "description": "",
-  "author": "MAE",
-  "icon": "fa-solid fa-puzzle-piece",
-  "color": "#fab283",
-  "entryPoint": "",
-  "repository": "",
-  "startCommand": "",
-  "folder": "",
-  "executeCommand": "",
-  "capabilities": []
+﻿{
+    "capabilities":  [
+                         "theme",
+                         "colors"
+                     ],
+    "version":  "1.0.0",
+    "color":  "#4EC9B0",
+    "displayName":  "Terminal Themes",
+    "name":  "terminal-themes",
+    "description":  "Custom terminal color schemes",
+    "author":  "MAE",
+    "icon":  "fa-solid fa-terminal"
 }

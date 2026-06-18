@@ -1,0 +1,17 @@
+{
+  "name": "my-icon-pack",
+  "displayName": "My Icon Pack",
+  "version": "1.0.0",
+  "description": "Custom file icon pack",
+  "author": "",
+  "icon": "fa-solid fa-icons",
+  "color": "#fcd53a",
+  "entryPoint": "icons/mapping.json",
+  "repository": "",
+  "startCommand": "",
+  "folder": "",
+  "executeCommand": "",
+  "capabilities": [
+    "icons"
+  ]
+}

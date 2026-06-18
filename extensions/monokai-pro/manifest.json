@@ -1,0 +1,13 @@
+﻿{
+    "description":  "Monokai Pro theme with warm colors",
+    "capabilities":  [
+                         "theme"
+                     ],
+    "color":  "#ffd866",
+    "version":  "1.0.0",
+    "activated":  false,
+    "author":  "Monokai",
+    "name":  "monokai-pro",
+    "icon":  "fa-solid fa-palette",
+    "displayName":  "Monokai Pro"
+}

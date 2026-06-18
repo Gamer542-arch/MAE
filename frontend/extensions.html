@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ MAE Extensions Marketplace</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0d0d0d;
+            color: #e0dcd7;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 50%, #0d0d0d 100%);
+            border-bottom: 1px solid #1e1e1e;
+            padding: 32px 0;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #fab283, #fc533a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header p { color: #808080; font-size: 14px; }
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-top: 20px;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-num {
+            font-size: 24px;
+            font-weight: 700;
+            color: #fab283;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: #808080;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+        .search-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+        .search-input {
+            flex: 1;
+            background: #141414;
+            border: 1px solid #1e1e1e;
+            color: #e0dcd7;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .search-input:focus { border-color: #fab283; }
+        .search-input::placeholder { color: #505050; }
+        .filter-btn {
+            background: #141414;
+            border: 1px solid #1e1e1e;
+            color: #808080;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover { border-color: #fab283; color: #fab283; }
+        .filter-btn.active { background: #fab283; color: #0d0d0d; border-color: #fab283; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+        }
+        .card {
+            background: #141414;
+            border: 1px solid #1e1e1e;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .card:hover {
+            border-color: #fab283;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(250, 178, 131, 0.1);
+        }
+        .card.installed {
+            border-color: #73c991;
+        }
+        .card-top {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 12px;
+        }
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+        .card-info { flex: 1; min-width: 0; }
+        .card-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #e0dcd7;
+            margin-bottom: 2px;
+        }
+        .card-author {
+            font-size: 12px;
+            color: #808080;
+        }
+        .card-desc {
+            font-size: 13px;
+            color: #a0a0a0;
+            line-height: 1.5;
+            margin-bottom: 14px;
+        }
+        .card-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .tag {
+            background: #1e1e1e;
+            color: #808080;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .install-btn {
+            background: #fab283;
+            color: #0d0d0d;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .install-btn:hover {
+            background: #fc533a;
+            transform: scale(1.05);
+        }
+        .install-btn.installed {
+            background: #73c991;
+            cursor: default;
+        }
+        .install-btn.installed:hover {
+            background: #73c991;
+            transform: none;
+        }
+        .badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: #fab283;
+            color: #0d0d0d;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #1e1e1e;
+            border: 1px solid #73c991;
+            color: #73c991;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .footer {
+            text-align: center;
+            padding: 40px;
+            color: #505050;
+            font-size: 12px;
+            border-top: 1px solid #1e1e1e;
+            margin-top: 40px;
+        }
+        .footer a { color: #fab283; text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚡ MAE Extensions</h1>
+        <p>Extend your editor with powerful extensions and tools</p>
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-num" id="totalCount">0</div>
+                <div class="stat-label">Extensions</div>
+            </div>
+            <div class="stat">
+                <div class="stat-num" id="installedCount">0</div>
+                <div class="stat-label">Installed</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="search-bar">
+            <input class="search-input" id="searchInput" placeholder="🔍 Search extensions..." oninput="filterExts()">
+            <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">All</button>
+            <button class="filter-btn" data-filter="theme" onclick="setFilter('theme', this)">🎨 Themes</button>
+            <button class="filter-btn" data-filter="syntax" onclick="setFilter('syntax', this)">📝 Syntax</button>
+            <button class="filter-btn" data-filter="lint" onclick="setFilter('lint', this)">🔍 Lint</button>
+            <button class="filter-btn" data-filter="debug" onclick="setFilter('debug', this)">🐛 Debug</button>
+            <button class="filter-btn" data-filter="format" onclick="setFilter('format', this)">✨ Format</button>
+        </div>
+        <div class="grid" id="extGrid"></div>
+    </div>
+
+    <div class="footer">
+        ⚡ MAE — Make Anything Editor · <a href="/">Back to Editor</a> · <a href="/docs">API Docs</a>
+    </div>
+
+    <div class="toast" id="toast">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="toastMsg">Installed!</span>
+    </div>
+
+    <script>
+        let currentFilter = 'all';
+        let installedSet = new Set();
+
+        const EXTENSIONS = [
+            { name: 'python', displayName: 'Python Support', version: '1.0.0', description: 'Full Python language support with syntax highlighting, linting, code execution, and formatting.', author: 'MAE', icon: 'fa-brands fa-python', color: '#3572A5', caps: ['syntax','lint','execute','format'] },
+            { name: 'javascript', displayName: 'JavaScript & Web', version: '1.0.0', description: 'JavaScript, TypeScript, HTML, and CSS support with linting and debugging.', author: 'MAE', icon: 'fa-brands fa-js', color: '#F7DF1E', caps: ['syntax','lint','format','debug'] },
+            { name: 'theme-oc2', displayName: 'OpenCode OC-2 Dark', version: '1.0.0', description: 'Beautiful dark theme based on OpenCode OC-2 color scheme.', author: 'MAE', icon: 'fa-solid fa-palette', color: '#fab283', caps: ['theme'] },
+            { name: 'formatter', displayName: 'Code Formatter', version: '1.0.0', description: 'Auto-format code on save using black (Python) and prettier (JS/TS).', author: 'MAE', icon: 'fa-solid fa-indent', color: '#00ceb9', caps: ['format'] },
+            { name: 'icon-pack-example', displayName: 'Icon Pack', version: '1.0.0', description: 'Custom file type icons using Font Awesome mappings.', author: 'MAE', icon: 'fa-solid fa-icons', color: '#fcd53a', caps: ['icons'] },
+            { name: 'docker', displayName: 'Docker Support', version: '1.0.0', description: 'Dockerfile and docker-compose syntax highlighting and snippets.', author: 'MAE', icon: 'fa-brands fa-docker', color: '#2496ED', caps: ['syntax','lint','snippets'] },
+            { name: 'gitlens', displayName: 'GitLens', version: '1.0.0', description: 'Git blame annotations, history, and commit lenses.', author: 'MAE', icon: 'fa-solid fa-code-branch', color: '#F05032', caps: ['git','lenses'] },
+            { name: 'debugger', displayName: 'Debugger', version: '1.0.0', description: 'Breakpoints, step-through debugging with variable inspection.', author: 'MAE', icon: 'fa-solid fa-bug', color: '#EA4AAA', caps: ['debug','breakpoints'] },
+            { name: 'markdown', displayName: 'Markdown Preview', version: '1.0.0', description: 'Live markdown rendering preview with syntax highlighting.', author: 'MAE', icon: 'fa-brands fa-markdown', color: '#519aba', caps: ['preview','markdown'] },
+            { name: 'json-support', displayName: 'JSON Support', version: '1.0.0', description: 'JSON validation, formatting, schema support, and autocomplete.', author: 'MAE', icon: 'fa-solid fa-code', color: '#f5f5f5', caps: ['syntax','lint','format'] },
+            { name: 'terminal-themes', displayName: 'Terminal Themes', version: '1.0.0', description: 'Custom terminal color schemes for the built-in terminal.', author: 'MAE', icon: 'fa-solid fa-terminal', color: '#4EC9B0', caps: ['theme','colors'] },
+            { name: 'error-lens', displayName: 'Error Lens', version: '1.0.0', description: 'Show errors and warnings inline in the editor.', author: 'MAE', icon: 'fa-solid fa-circle-exclamation', color: '#F14C4C', caps: ['diagnostic','inline'] },
+            { name: 'auto-rename', displayName: 'Auto Rename Tag', version: '1.0.0', description: 'Automatically rename paired HTML/XML tags.', author: 'MAE', icon: 'fa-solid fa-tags', color: '#569cd6', caps: ['html','rename'] },
+            { name: 'bracket-color', displayName: 'Bracket Pair Colorizer', version: '1.0.0', description: 'Colorized matching brackets for better readability.', author: 'MAE', icon: 'fa-solid fa-border-all', color: '#c586c0', caps: ['colors','brackets'] },
+            { name: 'path-intellisense', displayName: 'Path Intellisense', version: '1.0.0', description: 'Autocomplete filenames and paths in your code.', author: 'MAE', icon: 'fa-solid fa-folder-open', color: '#d7ba7d', caps: ['autocomplete','paths'] },
+            { name: 'todo-tree', displayName: 'Todo Tree', version: '1.0.0', description: 'Find and display TODO, FIXME, and HACK comments.', author: 'MAE', icon: 'fa-solid fa-tree', color: '#73c991', caps: ['search','todo'] },
+            { name: 'indent-rainbow', displayName: 'Indent Rainbow', version: '1.0.0', description: 'Rainbow colors for indentation levels.', author: 'MAE', icon: 'fa-solid fa-rainbow', color: '#ff7b72', caps: ['colors','indent'] },
+            { name: 'graphql', displayName: 'GraphQL Support', version: '1.0.0', description: 'GraphQL schema syntax and autocomplete.', author: 'MAE', icon: 'fa-solid fa-project-diagram', color: '#E535AB', caps: ['syntax','lint'] },
+            { name: 'rust', displayName: 'Rust Support', version: '1.0.0', description: 'Rust language syntax, formatting, and cargo integration.', author: 'MAE', icon: 'fa-brands fa-rust', color: '#DEA584', caps: ['syntax','lint','format'] },
+            { name: 'go', displayName: 'Go Support', version: '1.0.0', description: 'Go language syntax, linting, and gofmt integration.', author: 'MAE', icon: 'fa-brands fa-golang', color: '#00ADD8', caps: ['syntax','lint','format'] },
+        ];
+
+        async function loadInstalled() {
+            try {
+                const resp = await fetch('/api/extensions/list');
+                if (resp.ok) {
+                    const data = await resp.json();
+                    data.forEach(ext => installedSet.add(ext.name));
+                }
+            } catch(e) {}
+            render();
+        }
+
+        function render() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const grid = document.getElementById('extGrid');
+            let html = '';
+            let count = 0;
+            EXTENSIONS.forEach(ext => {
+                if (currentFilter !== 'all' && !ext.caps.includes(currentFilter)) return;
+                if (q && !ext.displayName.toLowerCase().includes(q) && !ext.description.toLowerCase().includes(q)) return;
+                count++;
+                const installed = installedSet.has(ext.name);
+                html += `<div class="card ${installed?'installed':''}">
+                    <div class="card-top">
+                        <div class="card-icon" style="background:${ext.color}20;color:${ext.color};">
+                            <i class="${ext.icon}"></i>
+                        </div>
+                        <div class="card-info">
+                            <div class="card-name">${ext.displayName}</div>
+                            <div class="card-author">${ext.author} · v${ext.version}</div>
+                        </div>
+                    </div>
+                    <div class="card-desc">${ext.description}</div>
+                    <div class="card-bottom">
+                        <div class="tags">${ext.caps.map(c=>`<span class="tag">${c}</span>`).join('')}</div>
+                        <button class="install-btn ${installed?'installed':''}" onclick="${installed?'':`installExt('${ext.name}','${ext.displayName}','${ext.icon}','${ext.color}',${JSON.stringify(ext.caps)})`}">
+                            ${installed?'✓ Installed':'Install'}
+                        </button>
+                    </div>
+                </div>`;
+            });
+            grid.innerHTML = html;
+            document.getElementById('totalCount').textContent = EXTENSIONS.length;
+            document.getElementById('installedCount').textContent = installedSet.size;
+        }
+
+        function filterExts() { render(); }
+
+        function setFilter(f, el) {
+            currentFilter = f;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            render();
+        }
+
+        async function installExt(name, displayName, icon, color, caps) {
+            try {
+                const resp = await fetch('/api/extensions/install', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name, displayName, version: '1.0.0',
+                        author: 'MAE', icon, color,
+                        capabilities: caps, activated: true,
+                    }),
+                });
+                if (resp.ok) {
+                    installedSet.add(name);
+                    render();
+                    showToast(displayName + ' installed!');
+                }
+            } catch(e) { showToast('Install failed', true); }
+        }
+
+        function showToast(msg, err) {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = msg;
+            t.style.borderColor = err ? '#F14C4C' : '#73c991';
+            t.style.color = err ? '#F14C4C' : '#73c991';
+            t.querySelector('i').className = err ? 'fa-solid fa-circle-xmark' : 'fa-solid fa-circle-check';
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        loadInstalled();
+    </script>
+</body>
+</html>

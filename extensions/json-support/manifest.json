@@ -1,0 +1,14 @@
+﻿{
+    "capabilities":  [
+                         "syntax",
+                         "lint",
+                         "format"
+                     ],
+    "version":  "1.0.0",
+    "color":  "#f5f5f5",
+    "displayName":  "JSON Support",
+    "name":  "json-support",
+    "description":  "JSON validation, formatting, and schemas",
+    "author":  "MAE",
+    "icon":  "fa-solid fa-code"
+}

@@ -1,0 +1,13 @@
+﻿{
+    "capabilities":  [
+                         "debug",
+                         "breakpoints"
+                     ],
+    "version":  "1.0.0",
+    "color":  "#EA4AAA",
+    "displayName":  "Debugger",
+    "name":  "debugger",
+    "description":  "Breakpoints, step-through debugging",
+    "author":  "MAE",
+    "icon":  "fa-solid fa-bug"
+}

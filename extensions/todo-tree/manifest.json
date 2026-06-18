@@ -1,0 +1,13 @@
+﻿{
+    "capabilities":  [
+                         "search",
+                         "todo"
+                     ],
+    "version":  "1.0.0",
+    "color":  "#73c991",
+    "displayName":  "Todo Tree",
+    "name":  "todo-tree",
+    "description":  "Find TODO/FIXME/HACK comments",
+    "author":  "MAE",
+    "icon":  "fa-solid fa-tree"
+}

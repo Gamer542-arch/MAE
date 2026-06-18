@@ -128,7 +128,7 @@ const API = {
         catch(e) { return {error:e.message}; }
     },
     files(path) { return this.fetch(`/api/files/list?path=${encodeURIComponent(path||'')}`); },
-    tree() { return this.fetch('/api/files/tree'); },
+    tree(path) { return this.fetch(`/api/files/tree?path=${encodeURIComponent(path||'')}`); },
     read(path) { return this.fetch(`/api/files/read?path=${encodeURIComponent(path)}`); },
     write(path, content) { return this.fetch('/api/files/write',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path,content})}); },
     delete(path) { return this.fetch(`/api/files/delete?path=${encodeURIComponent(path)}`,{method:'DELETE'}); },
@@ -155,6 +155,7 @@ const STATE = {
     openFile: null,
     openFilePath: '',
     sidebarView: 'explorer',
+    currentProject: '',
 };
 
 const DEFAULT_SYSTEM_PROMPT = [
@@ -538,7 +539,8 @@ const Explorer = {
         if (!tree) return;
         tree.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);"><span class="codicon codicon-loading" style="animation:spin 1s infinite;"></span> Loading...</div>';
         try {
-            const data = await API.tree();
+            const path = STATE.currentProject || '';
+            const data = await API.tree(path);
             const tabsData = M.Tabs.getOpenTabs();
             const openFiles = new Set(tabsData.map(t => t.path));
             tree.innerHTML = this.renderTree(data, 0, openFiles);
@@ -552,38 +554,43 @@ const Explorer = {
         let h = '';
         items.forEach(item => {
             const isOpen = openFiles.has(item.path);
-            const escapedPath = item.path.replace(/"/g, '&quot;');
-            const escapedName = item.name.replace(/"/g, '&quot;');
             if (item.type === 'folder') {
-                h += `<div class="tree-item tree-folder" data-path="${escapedPath}">${'<span class="tree-indent"></span>'.repeat(depth)}<span class="codicon codicon-chevron-right" style="font-size:11px;"></span> <span class="fa-solid fa-folder"></span> ${item.name}</div>`;
+                h += `<div class="tree-item tree-folder" data-path="${item.path}">${'<span class="tree-indent"></span>'.repeat(depth)}<span class="codicon codicon-chevron-right" style="font-size:11px;"></span> <span class="fa-solid fa-folder"></span> ${item.name}</div>`;
                 if (item.children && item.children.length) {
-                    h += `<div class="folder-children hidden" data-folder="${escapedPath}">${this.renderTree(item.children, depth+1, openFiles)}</div>`;
+                    h += `<div class="folder-children hidden" data-folder="${item.path}">${this.renderTree(item.children, depth+1, openFiles)}</div>`;
                 }
             } else {
-                h += `<div class="tree-item tree-file${isOpen?' active':''}" data-path="${escapedPath}" data-name="${escapedName}">${'<span class="tree-indent"></span>'.repeat(depth)}<span class="${iconFor(item.name)}"></span> ${item.name}</div>`;
+                h += `<div class="tree-item tree-file${isOpen?' active':''}" data-path="${item.path}" data-name="${item.name}">${'<span class="tree-indent"></span>'.repeat(depth)}<span class="${iconFor(item.name)}"></span> ${item.name}</div>`;
             }
         });
         return h;
     },
 
     async openFile(path, name) {
-        const data = await API.read(path);
-        if (data.error) { Modal.alert(data.error, 'Error'); return; }
-        STATE.openFile = data.content;
-        STATE.openFilePath = path;
-        M.Tabs.openTab(path, name);
-        M.Editor.show(data.content, name);
-        $('#sbFile').innerHTML = `<span class="codicon codicon-file"></span> ${path}`;
-        document.querySelectorAll('.tree-item.active').forEach(el => el.classList.remove('active'));
-        const sel = `.tree-item[data-path="${CSS.escape(path)}"]`;
-        document.querySelector(sel)?.classList.add('active');
-        if (Chat.mode === 'build') {
-            Chat.setFileContext(path, data.content);
-        }
-        const recent = JSON.parse(localStorage.getItem('mae-recent') || '[]');
-        const filtered = recent.filter(r => r.path !== path);
-        filtered.unshift({ path, name, icon: iconFor(name) });
-        localStorage.setItem('mae-recent', JSON.stringify(filtered.slice(0, 10)));
+        try {
+            const resp = await fetch('/api/files/getclickedfile?path=' + encodeURIComponent(path));
+            if (!resp.ok) { Modal.alert('File not found', 'Error'); return; }
+            const data = await resp.json();
+            STATE.openFile = data.content;
+            STATE.openFilePath = data.path;
+            // Dodaj tab bez wywoływania openFile ponownie
+            Tabs.openTab(data.path, data.name);
+            M.Editor.show(data.content, data.name);
+            const sbFile = $('#sbFile');
+            if (sbFile) sbFile.innerHTML = `<span class="codicon codicon-file"></span> ${data.path}`;
+            document.querySelectorAll('.tree-item.active').forEach(el => el.classList.remove('active'));
+            try {
+                const sel = `.tree-item[data-path="${CSS.escape(data.path)}"]`;
+                document.querySelector(sel)?.classList.add('active');
+            } catch(e) {}
+            if (Chat.mode === 'build') {
+                Chat.setFileContext(data.path, data.content);
+            }
+            const recent = JSON.parse(localStorage.getItem('mae-recent') || '[]');
+            const filtered = recent.filter(r => r.path !== data.path);
+            filtered.unshift({ path: data.path, name: data.name, icon: iconFor(data.name) });
+            localStorage.setItem('mae-recent', JSON.stringify(filtered.slice(0, 10)));
+        } catch (e) { Modal.alert('Error opening file: ' + e.message, 'Error'); }
     },
 
     toggleFolder(path) {
@@ -664,7 +671,7 @@ const Explorer = {
             M.Tabs.closeTab(STATE.openFilePath);
             STATE.openFile = null;
             STATE.openFilePath = '';
-            M.Editor.show('', '');
+            M.Editor.show();
             await this.refresh();
         }, 'Delete File', 'Delete');
     },
@@ -675,6 +682,12 @@ const Explorer = {
 // =============================================
 const Tabs = {
     tabs: [],
+    welcomeTab: { path: '__welcome__', name: 'Welcome', active: true },
+
+    init() {
+        this.tabs = [this.welcomeTab];
+        this.render();
+    },
 
     openTab(path, name) {
         if (path === 'preview.html') return;
@@ -687,9 +700,19 @@ const Tabs = {
     },
 
     closeTab(path) {
+        if (path === '__welcome__') return;
         this.tabs = this.tabs.filter(t => t.path !== path);
         if (this.tabs.length > 0) {
-            this.tabs[this.tabs.length-1].active = true;
+            const last = this.tabs[this.tabs.length-1];
+            last.active = true;
+            if (last.path === '__welcome__') {
+                Editor.showWelcome();
+            } else {
+                // Pokaż plik z tabów bez fetchowania
+                Editor.showByPath(last.path, last.name);
+            }
+        } else {
+            Editor.showWelcome();
         }
         this.render();
     },
@@ -700,20 +723,26 @@ const Tabs = {
         const bar = $('#tabsContent');
         if (!bar) return;
         let h = this.tabs.map(t => {
-            const icon = iconFor(t.name);
-            return `<div class="tab${t.active?' active':''}" onclick="Explorer.openFile('${t.path}','${t.name}')">
-                <span class="${icon}"></span><span>${t.name}</span>
-                <span class="tab-x" onclick="event.stopPropagation();Tabs.closeTab('${t.path}')"><span class="codicon codicon-close"></span></span>
+            const isWelcome = t.path === '__welcome__';
+            const icon = isWelcome ? 'fa-solid fa-house' : iconFor(t.name);
+            return `<div class="tab${t.active?' active':''}" onclick="${isWelcome?'Tabs.switchToWelcome()':`Explorer.openFile('${t.path}','${t.name}')`}">
+                <span class="${icon}" style="font-size:12px;margin-right:4px;"></span><span>${t.name}</span>
+                ${isWelcome ? '' : `<span class="tab-x" onclick="event.stopPropagation();Tabs.closeTab('${t.path}')"><span class="codicon codicon-close"></span></span>`}
             </div>`;
         }).join('');
-        if (this.tabs.length > 0) {
+        if (this.tabs.length > 1) {
             const active = this.tabs.find(t => t.active);
             if (active && active.name.endsWith('.html')) {
                 h += `<button class="tab" onclick="M.Editor.preview()" style="background:var(--accent);color:#0d0d0d;font-weight:600;border:none;padding:0 12px;margin-left:4px;"><span class="codicon codicon-eye"></span> Preview</button>`;
             }
         }
-        h += '<div class="tab tab-add"><span class="codicon codicon-add" style="font-size:14px;"></span></div>';
         bar.innerHTML = h;
+    },
+
+    switchToWelcome() {
+        this.tabs.forEach(t => t.active = t.path === '__welcome__');
+        this.render();
+        Editor.showWelcome();
     },
 };
 
@@ -722,32 +751,155 @@ const Tabs = {
 // =============================================
 const Editor = {
     show(content, name) {
-        const code = $('#editorCode');
         const panel = $('#editorPanel');
-        if (!code || !panel) return;
+        if (!panel) return;
 
-        if (!content && !name) {
-            panel.innerHTML = this._welcomePage();
+        if (content === undefined && name === undefined) {
+            this.showWelcome();
             return;
         }
 
-        if (!panel.querySelector('.editor')) {
-            panel.innerHTML = `<div class="editor"><div class="editor-gutter font-mono-ui" id="editorGutter"></div><textarea class="editor-code font-mono" id="editorCode" spellcheck="false" placeholder="Select a file from Explorer..."></textarea></div>`;
-            const newCode = $('#editorCode');
-            if (newCode) {
-                newCode.addEventListener('input', () => this.updateGutter());
-                newCode.addEventListener('scroll', () => {
-                    const gutter = $('#editorGutter');
-                    if (gutter) gutter.scrollTop = newCode.scrollTop;
-                });
-            }
-        }
+        const isHtml = name && name.endsWith('.html');
+        const previewBtn = isHtml ? `<button class="editor-toolbar-btn" onclick="Editor.togglePreview()" title="Split Preview (Ctrl+Shift+M)"><span class="codicon codicon-split-horizontal"></span> Split</button>` : '';
+
+        panel.innerHTML = `
+            <div class="editor-toolbar">
+                ${previewBtn}
+            </div>
+            <div class="editor-workspace" id="editorWorkspace">
+                <div class="editor" id="editorMain"><div class="editor-gutter font-mono-ui" id="editorGutter"></div><textarea class="editor-code font-mono" id="editorCode" spellcheck="false" placeholder="Select a file from Explorer..."></textarea></div>
+            </div>
+        `;
 
         const codeEl = $('#editorCode');
         codeEl.value = content || '';
         const lines = (content || '').split('\n');
         const gutter = $('#editorGutter');
         gutter.innerHTML = lines.map((_, i) => `<div>${i + 1}</div>`).join('');
+
+        codeEl.addEventListener('input', () => {
+            this.updateGutter();
+            this._updatePreviewLive();
+        });
+        codeEl.addEventListener('scroll', () => {
+            if (gutter) gutter.scrollTop = codeEl.scrollTop;
+        });
+    },
+
+    showWelcome() {
+        const panel = $('#editorPanel');
+        if (!panel) return;
+        panel.innerHTML = '<iframe src="/screen" style="width:100%;height:100%;border:none;background:var(--bg-base);"></iframe>';
+    },
+
+    // ── Preview Split ──
+    togglePreview() {
+        const workspace = $('#editorWorkspace');
+        if (!workspace) return;
+
+        const existing = workspace.querySelector('.preview-panel');
+        if (existing) {
+            // Zamknij preview — przywróć normalny editor
+            const editorMain = existing.querySelector('.preview-left .editor');
+            if (editorMain) workspace.appendChild(editorMain);
+            existing.remove();
+            const splitter = workspace.querySelector('.preview-splitter');
+            if (splitter) splitter.remove();
+            $('#editorMain')?.style?.removeProperty('display');
+            return;
+        }
+
+        // Otwórz preview — split view
+        const editorMain = workspace.querySelector('.editor');
+        if (!editorMain) return;
+
+        // Ukryj oryginalny editor
+        editorMain.style.display = 'none';
+
+        const previewHTML = `
+            <div class="preview-panel" id="previewPanel" style="display:flex;">
+                <div class="preview-left">
+                    <div class="preview-header">
+                        <span><span class="codicon codicon-code" style="margin-right:4px;"></span> Code</span>
+                    </div>
+                </div>
+                <div class="preview-splitter" id="previewSplitter"></div>
+                <div class="preview-right" id="previewRight">
+                    <div class="preview-header">
+                        <span><span class="codicon codicon-eye" style="margin-right:4px;"></span> Preview</span>
+                        <button class="preview-close" onclick="Editor.togglePreview()"><span class="codicon codicon-close"></span></button>
+                    </div>
+                    <iframe class="preview-iframe" id="previewFrame"></iframe>
+                </div>
+            </div>
+        `;
+
+        workspace.insertAdjacentHTML('beforeend', previewHTML);
+
+        // Przenieś editor do left panel
+        const leftPanel = workspace.querySelector('.preview-left');
+        if (leftPanel && editorMain) {
+            editorMain.style.display = '';
+            leftPanel.appendChild(editorMain);
+        }
+
+        // Załaduj preview
+        const frame = $('#previewFrame');
+        if (frame) frame.srcdoc = Editor.getContent();
+
+        // Setup splitter drag
+        this._setupSplitter();
+    },
+
+    _setupSplitter() {
+        const splitter = $('#previewSplitter');
+        const left = $('.preview-left');
+        const right = $('.preview-right');
+        if (!splitter || !left || !right) return;
+
+        let startX, startLeftFlex, startRightFlex;
+        const workspace = $('#editorWorkspace');
+        const totalWidth = workspace ? workspace.offsetWidth : window.innerWidth;
+
+        splitter.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            startX = e.clientX;
+            startLeftFlex = left.offsetWidth;
+            startRightFlex = right.offsetWidth;
+            splitter.classList.add('active');
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+
+        const onMove = (e) => {
+            const diff = e.clientX - startX;
+            const newLeft = Math.max(200, startLeftFlex + diff);
+            const newRight = Math.max(200, startRightFlex - diff);
+            left.style.flex = `0 0 ${newLeft}px`;
+            right.style.flex = `0 0 ${newRight}px`;
+        };
+
+        const onUp = () => {
+            splitter.classList.remove('active');
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+        };
+    },
+
+    _updatePreviewLive() {
+        const frame = $('#previewFrame');
+        if (frame && frame.srcdoc !== undefined) {
+            frame.srcdoc = Editor.getContent();
+        }
+    },
+
+    escapeForSrcdoc(html) {
+        return html.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    },
+
+    showByPath(path, name) {
+        // Szukaj w cache lub fetchuj
+        Explorer.openFile(path, name);
     },
 
     _welcomePage() {
@@ -779,12 +931,12 @@ const Editor = {
                         </div>
                         <div style="color:var(--text-muted);font-size:11px;">Create a new file in workspace</div>
                     </div>
-                    <div onclick="M.UI.showSidebar('extensions')" style="padding:16px;background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <div onclick="M.UI.showSidebar('skills')" style="padding:16px;background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                            <span class="codicon codicon-extensions" style="color:var(--accent);font-size:16px;"></span>
-                            <span style="color:var(--text);font-size:13px;font-weight:600;">Extensions</span>
+                            <span class="codicon codicon-mortar-board" style="color:var(--accent);font-size:16px;"></span>
+                            <span style="color:var(--text);font-size:13px;font-weight:600;">Skills</span>
                         </div>
-                        <div style="color:var(--text-muted);font-size:11px;">Browse & install extensions</div>
+                        <div style="color:var(--text-muted);font-size:11px;">AI coding assistants</div>
                     </div>
                     <div onclick="M.UI.showSidebar('git')" style="padding:16px;background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
@@ -969,8 +1121,9 @@ const Chat = {
         this.fileContext = path;
         this.fileContent = content || '';
         const ctx = $('#chatFileContext');
-        ctx.style.display = 'flex';
-        $('#chatFileName').textContent = path + ' (' + (this.fileContent.length) + ' znak\u00F3w)';
+        if (ctx) ctx.style.display = 'flex';
+        const fn = $('#chatFileName');
+        if (fn) fn.textContent = path + ' (' + (this.fileContent.length) + ' znaki)';
     },
 
     _buildSystemPrompt() {
@@ -1041,7 +1194,7 @@ const Chat = {
         const systemPrompt = this._buildSystemPrompt();
         const loading = this.addThinking();
         try {
-            const data = await API.chat(provider, model, [{ role: 'user', content: text }], systemPrompt);
+            const data = await API.chat(provider, model, this.messages, systemPrompt);
             loading.remove();
             if (data.error) { this.addMsg('Błąd', data.error, 'error', time()); return; }
             const content = data.choices?.[0]?.message?.content;
@@ -1189,7 +1342,7 @@ const Chat = {
                     const delRes = await API.delete(p.path || '');
                     if (delRes.error) return r(false, delRes.error);
                     Explorer.refresh();
-                    if (p.path === STATE.openFilePath) { STATE.openFile = null; STATE.openFilePath = ''; Editor.show('', ''); }
+                    if (p.path === STATE.openFilePath) { STATE.openFile = null; STATE.openFilePath = ''; Editor.show(); }
                     return r(true, `Deleted: ${p.path}`);
                 }
                 case 'create_folder': {
@@ -1336,25 +1489,77 @@ const Chat = {
 
     _renderMarkdown(text) {
         let html = escapeHTML(text);
-        const codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
         let hasCode = false;
-        html = html.replace(codeBlockRegex, (match, lang, code) => {
+        let blockIdx = 0;
+
+        // Bloki kodu
+        html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
             hasCode = true;
+            const id = 'codeblock_' + (blockIdx++);
             const escapedCode = code.trimEnd();
             const lines = escapedCode.split('\n');
-            const numbered = lines.map((l, i) => `<div class="chat-code-line"><span class="ln">${i + 1}</span>${l || ' '}</div>`).join('');
-            const header = `<div class="chat-code-header"><span>${lang || 'code'}</span><span class="codicon codicon-copy" title="Kopiuj"></span></div>`;
-            return `${header}<div class="chat-code-body">${numbered}</div>`;
+            const numbered = lines.map((l, i) => `<div class="chat-code-line"><span class="ln">${i+1}</span>${l||' '}</div>`).join('');
+            return `<div class="chat-code-block" id="${id}">
+                <div class="chat-code-header">
+                    <span class="chat-code-lang">${lang||'code'}</span>
+                    <button class="chat-code-copy" onclick="Chat.copyCode('${id}')" title="Kopiuj">
+                        <span class="codicon codicon-copy"></span> Kopiuj
+                    </button>
+                </div>
+                <div class="chat-code-body">${numbered}</div>
+            </div>`;
         });
-        const wrapped = `<div class="chat-msg-body">${html.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</div>`;
+
+        // Inline kod
+        html = html.replace(/`([^`]+)`/g, '<code class="chat-inline-code">$1</code>');
+
+        // Bold
+        html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+        // Italic
+        html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+        // Listy
+        html = html.replace(/^- (.+)/gm, '<div style="padding-left:16px;">• $1</div>');
+        html = html.replace(/^(\d+)\. (.+)/gm, '<div style="padding-left:16px;">$1. $2</div>');
+
+        // Nowe linie
+        html = html.replace(/\n\n/g, '</p><p>');
+        html = html.replace(/\n/g, '<br>');
+
+        const wrapped = `<div class="chat-msg-body"><p>${html}</p></div>`;
+
         if (hasCode) {
             return wrapped + `<div class="chat-actions">
-                <button class="chat-action-btn"><span class="codicon codicon-copy"></span> Kopiuj</button>
+                <button class="chat-action-btn" onclick="Chat.copyAll(this)"><span class="codicon codicon-copy"></span> Kopiuj wszystko</button>
                 <button class="chat-action-btn primary"><span class="codicon codicon-diff-added"></span> Zastosuj</button>
                 <button class="chat-action-btn"><span class="codicon codicon-history"></span> Cofnij</button>
             </div>`;
         }
         return wrapped;
+    },
+
+    copyCode(id) {
+        const block = document.getElementById(id);
+        if (!block) return;
+        const code = block.querySelector('.chat-code-body')?.innerText || '';
+        navigator.clipboard.writeText(code).then(() => {
+            const btn = block.querySelector('.chat-code-copy');
+            if (btn) {
+                btn.innerHTML = '<span class="codicon codicon-check"></span> Skopiowano!';
+                setTimeout(() => { btn.innerHTML = '<span class="codicon codicon-copy"></span> Kopiuj'; }, 1500);
+            }
+        });
+    },
+
+    copyAll(btn) {
+        const msg = btn.closest('.chat-msg');
+        if (!msg) return;
+        const code = msg.querySelector('.chat-code-body')?.innerText || '';
+        navigator.clipboard.writeText(code).then(() => {
+            btn.innerHTML = '<span class="codicon codicon-check"></span> Skopiowano!';
+            setTimeout(() => { btn.innerHTML = '<span class="codicon codicon-copy"></span> Kopiuj wszystko'; }, 1500);
+        });
     },
 
     addThinking() {
@@ -1413,6 +1618,9 @@ const Terminal = {
             }
             if (result.error) {
                 out.innerHTML += `<div class="pline err">${escapeHTML(result.error)}</div>`;
+            }
+            if (result.returncode && result.returncode !== 0 && !result.stderr && !result.error) {
+                out.innerHTML += `<div class="pline err">Exit code: ${result.returncode}</div>`;
             }
         } catch (e) {
             out.innerHTML += `<div class="pline err">Error: ${escapeHTML(e.message)}</div>`;
@@ -1541,8 +1749,16 @@ const Settings = {
                 </div>
                 <div class="settings-field"><div class="settings-label">Theme</div>
                     <select class="settings-select" onchange="Settings.setTheme(this.value)">
-                        <option value="oc-2-dark">OpenCode OC-2 Dark</option>
-                        <option value="vscode-dark">VS Code Dark</option>
+                        <option value="oc2-dark" ${(localStorage.getItem('mae-theme')||'oc2-dark')==='oc2-dark'?'selected':''}>OpenCode OC-2 Dark</option>
+                        <option value="google-ai-studio" ${localStorage.getItem('mae-theme')==='google-ai-studio'?'selected':''}>Google AI Studio</option>
+                        <option value="github-dark" ${localStorage.getItem('mae-theme')==='github-dark'?'selected':''}>GitHub Dark</option>
+                        <option value="dracula" ${localStorage.getItem('mae-theme')==='dracula'?'selected':''}>Dracula</option>
+                        <option value="monokai" ${localStorage.getItem('mae-theme')==='monokai'?'selected':''}>Monokai Pro</option>
+                        <option value="nord" ${localStorage.getItem('mae-theme')==='nord'?'selected':''}>Nord</option>
+                        <option value="one-dark" ${localStorage.getItem('mae-theme')==='one-dark'?'selected':''}>One Dark Pro</option>
+                        <option value="tokyo-night" ${localStorage.getItem('mae-theme')==='tokyo-night'?'selected':''}>Tokyo Night</option>
+                        <option value="catppuccin" ${localStorage.getItem('mae-theme')==='catppuccin'?'selected':''}>Catppuccin Mocha</option>
+                        <option value="vscode-dark" ${localStorage.getItem('mae-theme')==='vscode-dark'?'selected':''}>VS Code Dark</option>
                     </select>
                 </div>
                 <div class="settings-field"><div class="settings-label">Default Provider</div>
@@ -1602,7 +1818,37 @@ const Settings = {
         localStorage.setItem('mae-font', name);
     },
 
-    setTheme(t) { localStorage.setItem('mae-theme', t); },
+    setTheme(id) {
+        const THEMES = {
+            'oc2-dark': { bg:'#0d0d0d',surface:'#141414',sidebar:'#0a0a0a',accent:'#fab283',text:'#e0dcd7',textDim:'#808080',border:'#1e1e1e',green:'#73c991',red:'#F14C4C',blue:'#569cd6',purple:'#c586c0' },
+            'google-ai-studio': { bg:'#1e1e2e',surface:'#252536',sidebar:'#17172a',accent:'#8ab4f8',text:'#e8eaed',textDim:'#9aa0a6',border:'#3c3c4e',green:'#81c995',red:'#f28b82',blue:'#8ab4f8',purple:'#c58af9' },
+            'github-dark': { bg:'#0d1117',surface:'#161b22',sidebar:'#0d1117',accent:'#58a6ff',text:'#c9d1d9',textDim:'#8b949e',border:'#30363d',green:'#3fb950',red:'#f85149',blue:'#58a6ff',purple:'#bc8cff' },
+            'dracula': { bg:'#282a36',surface:'#2d2f3d',sidebar:'#21222c',accent:'#bd93f9',text:'#f8f8f2',textDim:'#6272a4',border:'#44475a',green:'#50fa7b',red:'#ff5555',blue:'#8be9fd',purple:'#bd93f9' },
+            'monokai': { bg:'#2d2a2e',surface:'#333036',sidebar:'#252226',accent:'#ffd866',text:'#fcfcfa',textDim:'#727072',border:'#403e41',green:'#a9dc76',red:'#ff6188',blue:'#78dce8',purple:'#ab9df2' },
+            'nord': { bg:'#2e3440',surface:'#3b4252',sidebar:'#2e3440',accent:'#88c0d0',text:'#eceff4',textDim:'#7b88a1',border:'#3b4252',green:'#a3be8c',red:'#bf616a',blue:'#81a1c1',purple:'#b48ead' },
+            'one-dark': { bg:'#282c34',surface:'#2c313a',sidebar:'#252930',accent:'#61afef',text:'#abb2bf',textDim:'#5c6370',border:'#3e4451',green:'#98c379',red:'#e06c75',blue:'#61afef',purple:'#c678dd' },
+            'tokyo-night': { bg:'#1a1b26',surface:'#1f2335',sidebar:'#16161e',accent:'#7aa2f7',text:'#a9b1d6',textDim:'#565f89',border:'#3b4261',green:'#9ece6a',red:'#f7768e',blue:'#7aa2f7',purple:'#bb9af7' },
+            'catppuccin': { bg:'#1e1e2e',surface:'#262637',sidebar:'#181825',accent:'#f5c2e7',text:'#cdd6f4',textDim:'#6c7086',border:'#45475a',green:'#a6e3a1',red:'#f38ba8',blue:'#89b4fa',purple:'#cba6f7' },
+            'vscode-dark': { bg:'#1e1e1e',surface:'#252526',sidebar:'#252526',accent:'#007acc',text:'#d4d4d4',textDim:'#808080',border:'#3c3c3c',green:'#4ec9b0',red:'#f44747',blue:'#569cd6',purple:'#c586c0' },
+        };
+        const t = THEMES[id];
+        if (!t) return;
+        const r = document.documentElement.style;
+        r.setProperty('--bg', t.bg);
+        r.setProperty('--bg-surface', t.surface);
+        r.setProperty('--bg-raised', t.surface);
+        r.setProperty('--bg-hover', t.border);
+        r.setProperty('--text', t.text);
+        r.setProperty('--text-dim', t.textDim);
+        r.setProperty('--text-muted', t.textDim);
+        r.setProperty('--border', t.border);
+        r.setProperty('--accent', t.accent);
+        r.setProperty('--accent-green', t.green);
+        r.setProperty('--accent-red', t.red);
+        const appEl = document.querySelector('.app-container') || document.querySelector('.app');
+        if (appEl) appEl.style.background = t.bg;
+        localStorage.setItem('mae-theme', id);
+    },
     save(key, val) { localStorage.setItem(`mae-${key}`, val); },
     saveGithubToken() {
         const v = $('#githubToken')?.value || '';
@@ -1685,13 +1931,6 @@ const UI = {
                 actions: '<button class="sidebar-btn" onclick="M.Execute.run()"><span class="codicon codicon-play"></span></button><button class="sidebar-btn"><span class="codicon codicon-settings-gear"></span></button>',
                 placeholder: '',
                 render() { body.innerHTML = `<div style="padding:16px;"><div style="color:var(--text-dim);font-size:12px;margin-bottom:8px;">RUN</div><button onclick="M.Execute.run()" style="background:var(--accent);color:#0d0d0d;border:none;padding:8px 20px;border-radius:4px;cursor:pointer;font-size:13px;font-weight:600;width:100%;margin-bottom:12px;"><span class="codicon codicon-play"></span> Run Code</button><div style="color:var(--text-muted);font-size:11px;">Ctrl+Enter lub kliknij Run</div><hr style="border-color:var(--border);margin:16px 0;"><div style="color:var(--text-dim);font-size:12px;margin-bottom:8px;">BREAKPOINTS</div><div style="color:var(--text-muted);font-size:11px;">No breakpoints set</div></div>`; },
-            },
-            extensions: {
-                title: 'Extensions',
-                icon: $('#abExt'),
-                actions: '<button class="sidebar-btn" onclick="M.Extensions.refresh()"><span class="codicon codicon-refresh"></span></button>',
-                placeholder: 'Search extensions...',
-                render() { Extensions.refresh(); },
             },
             skills: {
                 title: 'Skills',
@@ -1912,287 +2151,22 @@ const Git = {
 };
 
 // =============================================
-//  SUBAGENT: Extensions
-// =============================================
-const Extensions = {
-    extensions: [],
-
-    _modal(title, bodyHTML, onConfirm, confirmText) {
-        let overlay = $('#extModal');
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.id = 'extModal';
-            overlay.className = 'modal-overlay show';
-            overlay.style.zIndex = '1001';
-            document.body.appendChild(overlay);
-        }
-        overlay.innerHTML = `
-            <div class="modal-box" style="width:420px;">
-                <div class="modal-head">
-                    <span>${escapeHTML(title)}</span>
-                    <button class="chat-header-btn" onclick="M.Extensions._closeModal()"><span class="codicon codicon-close"></span></button>
-                </div>
-                <div style="padding:16px;">${bodyHTML}</div>
-                <div style="display:flex;justify-content:flex-end;gap:8px;padding:0 16px 16px;">
-                    <button onclick="M.Extensions._closeModal()" style="background:var(--bg-raised);border:1px solid var(--border);color:var(--text);padding:6px 16px;border-radius:4px;cursor:pointer;font-size:12px;">Cancel</button>
-                    <button id="extModalConfirm" style="background:var(--accent);color:#0d0d0d;border:none;padding:6px 16px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;">${confirmText || 'OK'}</button>
-                </div>
-            </div>`;
-        overlay.onclick = (e) => { if (e.target === overlay) this._closeModal(); };
-        const btn = $('#extModalConfirm');
-        if (btn && onConfirm) btn.onclick = () => { onConfirm(); this._closeModal(); };
-    },
-
-    _closeModal() {
-        const m = $('#extModal');
-        if (m) m.remove();
-    },
-
-    _inputModal(title, label, defaultVal, onConfirm, confirmText) {
-        this._modal(title,
-            `<div style="margin-bottom:4px;font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">${escapeHTML(label)}</div>
-             <input id="extModalInput" class="settings-input" value="${escapeHTML(defaultVal || '')}" autofocus />`,
-            () => { const v = $('#extModalInput')?.value?.trim(); if (v) onConfirm(v); },
-            confirmText || 'OK'
-        );
-        setTimeout(() => { const inp = $('#extModalInput'); if (inp) { inp.focus(); inp.select(); inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); $('#extModalConfirm')?.click(); } }; } }, 50);
-    },
-
-    _multiInputModal(title, fields, onConfirm, confirmText) {
-        const fieldsHTML = fields.map((f, i) =>
-            `<div style="margin-bottom:10px;">
-                <div style="margin-bottom:4px;font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">${escapeHTML(f.label)}</div>
-                <input id="extField${i}" class="settings-input" value="${escapeHTML(f.value || '')}" placeholder="${escapeHTML(f.placeholder || '')}" />
-            </div>`
-        ).join('');
-        this._modal(title, fieldsHTML,
-            () => {
-                const vals = fields.map((f, i) => $('#extField' + i)?.value?.trim() || '');
-                if (vals.every(v => v)) onConfirm(vals);
-            },
-            confirmText || 'Install'
-        );
-        setTimeout(() => { const inp = $('#extField0'); if (inp) { inp.focus(); inp.select(); } }, 50);
-    },
-
-    _textAreaModal(title, label, defaultVal, onConfirm, confirmText) {
-        this._modal(title,
-            `<div style="margin-bottom:4px;font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">${escapeHTML(label)}</div>
-             <textarea id="extModalTextarea" class="settings-input" rows="8" style="font-family:JetBrains Mono,Consolas,monospace;font-size:11px;resize:vertical;">${escapeHTML(defaultVal || '')}</textarea>`,
-            () => { const v = $('#extModalTextarea')?.value?.trim(); if (v) onConfirm(v); },
-            confirmText || 'Install'
-        );
-        setTimeout(() => { const ta = $('#extModalTextarea'); if (ta) { ta.focus(); ta.select(); } }, 50);
-    },
-
-    async refresh() {
-        const body = document.getElementById('sidebarBody');
-        if (body) body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">Loading extensions...</div>';
-        try {
-            const resp = await fetch('/api/extensions/list');
-            if (resp.ok) {
-                this.extensions = await resp.json();
-            }
-        } catch (e) { this.extensions = []; }
-        this.render();
-    },
-
-    render() {
-        const body = $('#sidebarBody');
-        if (!body) return;
-        let h = '<div style="padding:10px;">';
-        h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
-        h += '<div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">MARKETPLACE</div>';
-        h += '<button onclick="M.UI.showSidebar(\'skills\')" style="background:var(--bg-raised);border:1px solid var(--border);color:var(--text);padding:3px 8px;border-radius:3px;cursor:pointer;font-size:9px;">Manage</button>';
-        h += '</div>';
-
-        const available = [
-            { name: 'Python Support', desc: 'Syntax, linting, execution', icon: 'fa-brands fa-python', color: '#3572A5', id: 'python', caps: ['syntax','lint','execute','format'] },
-            { name: 'JavaScript & Web', desc: 'JS/TS, HTML, CSS support', icon: 'fa-brands fa-js', color: '#F7DF1E', id: 'javascript', caps: ['syntax','lint','format','debug'] },
-            { name: 'OpenCode OC-2 Dark', desc: 'Dark theme based on OC-2', icon: 'fa-solid fa-palette', color: '#fab283', id: 'theme-oc2', caps: ['theme'] },
-            { name: 'Code Formatter', desc: 'Auto-format code on save', icon: 'fa-solid fa-indent', color: '#00ceb9', id: 'formatter', caps: ['format'] },
-            { name: 'Icon Pack', desc: 'Custom file type icons', icon: 'fa-solid fa-icons', color: '#fcd53a', id: 'icon-pack-example', caps: ['icons'] },
-            { name: 'Docker Support', desc: 'Dockerfile, docker-compose', icon: 'fa-brands fa-docker', color: '#2496ED', id: 'docker', caps: ['syntax','lint'] },
-            { name: 'GitLens', desc: 'Git blame, history, lenses', icon: 'fa-solid fa-code-branch', color: '#F05032', id: 'gitlens', caps: ['git'] },
-            { name: 'Debugger', desc: 'Breakpoints, step-through', icon: 'fa-solid fa-bug', color: '#EA4AAA', id: 'debugger', caps: ['debug'] },
-            { name: 'Markdown Preview', desc: 'Live markdown rendering', icon: 'fa-brands fa-markdown', color: '#519aba', id: 'markdown', caps: ['preview'] },
-            { name: 'JSON Support', desc: 'JSON validation & formatting', icon: 'fa-solid fa-code', color: '#f5f5f5', id: 'json', caps: ['syntax','lint'] },
-            { name: 'Terminal themes', desc: 'Custom terminal colors', icon: 'fa-solid fa-terminal', color: '#4EC9B0', id: 'terminal-themes', caps: ['theme'] },
-            { name: 'Error Lens', desc: 'Inline error decorations', icon: 'fa-solid fa-circle-exclamation', color: '#F14C4C', id: 'error-lens', caps: ['diagnostic'] },
-        ];
-
-        const installedNames = this.extensions.map(e => e.name);
-        const notInstalled = available.filter(a => !installedNames.includes(a.id));
-
-        if (notInstalled.length > 0) {
-            notInstalled.forEach(ext => {
-                const caps = ext.caps.map(c => `<span style="background:var(--bg-hover);color:var(--text-dim);padding:1px 5px;border-radius:2px;font-size:8px;">${c}</span>`).join(' ');
-                h += `<div style="padding:8px;background:var(--bg-raised);border-radius:5px;margin-bottom:4px;border-left:2px solid ${ext.color};">
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <span class="${ext.icon}" style="color:${ext.color};font-size:14px;width:18px;text-align:center;"></span>
-                        <div style="flex:1;min-width:0;">
-                            <div style="color:var(--text);font-size:11px;font-weight:500;">${escapeHTML(ext.name)}</div>
-                            <div style="color:var(--text-muted);font-size:9px;">${escapeHTML(ext.desc)}</div>
-                        </div>
-                        <div onclick="M.Extensions.quickInstall('${ext.id}','${escapeHTML(ext.name)}','${ext.icon}','${ext.color}',${JSON.stringify(ext.caps)})" style="background:var(--accent);color:#0d0d0d;border:none;padding:3px 10px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;flex-shrink:0;">Install</div>
-                    </div>
-                    <div style="display:flex;gap:3px;margin-top:4px;">${caps}</div>
-                </div>`;
-            });
-        } else {
-            h += '<div style="color:var(--text-muted);font-size:11px;text-align:center;padding:16px;">All extensions installed</div>';
-        }
-
-        h += '<div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px;">SKILLS</div>';
-        const skillTemplates = [
-            { name: 'Python Expert', desc: 'Advanced Python coding assistant', icon: 'fa-brands fa-python', color: '#3572A5', prompt: 'You are a Python expert. Write clean, efficient Python code with type hints and docstrings.' },
-            { name: 'Code Reviewer', desc: 'Reviews code for bugs & improvements', icon: 'fa-solid fa-magnifying-glass', color: '#EA4AAA', prompt: 'You are a code reviewer. Analyze code for bugs, security issues, and suggest improvements.' },
-            { name: 'Test Writer', desc: 'Generates unit tests automatically', icon: 'fa-solid fa-vial', color: '#4EC9B0', prompt: 'You are a test engineer. Write comprehensive unit tests using pytest or unittest.' },
-            { name: 'Debugger', desc: 'Finds and fixes bugs in code', icon: 'fa-solid fa-bug', color: '#F14C4C', prompt: 'You are a debugger. Find bugs, explain root causes, and provide fixes.' },
-            { name: 'Refactorer', desc: 'Improves code structure & readability', icon: 'fa-solid fa-wand-magic-sparkles', color: '#C586C0', prompt: 'You are a refactoring expert. Improve code structure, readability, and maintainability.' },
-            { name: 'Doc Writer', desc: 'Generates documentation & READMEs', icon: 'fa-solid fa-book', color: '#519aba', prompt: 'You are a technical writer. Generate clear documentation, README files, and code comments.' },
-        ];
-        skillTemplates.forEach(s => {
-            h += `<div onclick="M.Extensions.installSkill('${s.name}','${s.desc}','${s.icon}','${s.color}','${s.prompt.replace(/'/g, "\\'")}')" style="padding:8px;background:var(--bg-raised);border-radius:5px;margin-bottom:4px;border-left:2px solid ${s.color};cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='var(--bg-raised)'">
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <span class="${s.icon}" style="color:${s.color};font-size:14px;width:18px;text-align:center;"></span>
-                    <div style="flex:1;min-width:0;">
-                        <div style="color:var(--text);font-size:11px;font-weight:500;">${escapeHTML(s.name)}</div>
-                        <div style="color:var(--text-muted);font-size:9px;">${escapeHTML(s.desc)}</div>
-                    </div>
-                    <div style="background:var(--accent);color:#0d0d0d;border:none;padding:3px 10px;border-radius:3px;font-size:9px;font-weight:600;flex-shrink:0;">Install</div>
-                </div>
-            </div>`;
-        });
-
-        h += '<div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px;">CUSTOM</div>';
-        h += `<div onclick="M.Extensions.installTemplate('icon-pack')" style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-raised);border-radius:4px;margin-bottom:3px;cursor:pointer;font-size:10px;">
-            <span class="fa-solid fa-icons" style="color:#fcd53a;"></span> Custom Icon Pack <span style="color:var(--text-muted);margin-left:auto;">Template</span>
-        </div>`;
-        h += `<div onclick="M.Extensions.installTemplate('theme')" style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-raised);border-radius:4px;margin-bottom:3px;cursor:pointer;font-size:10px;">
-            <span class="fa-solid fa-palette" style="color:#fab283;"></span> Custom Theme <span style="color:var(--text-muted);margin-left:auto;">Template</span>
-        </div>`;
-        h += `<div onclick="M.Extensions.installTemplate('formatter')" style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-raised);border-radius:4px;margin-bottom:3px;cursor:pointer;font-size:10px;">
-            <span class="fa-solid fa-indent" style="color:#00ceb9;"></span> Code Formatter <span style="color:var(--text-muted);margin-left:auto;">Template</span>
-        </div>`;
-        h += `<div onclick="M.Extensions.showInstall()" style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-raised);border-radius:4px;margin-bottom:3px;cursor:pointer;font-size:10px;">
-            <span class="fa-solid fa-code" style="color:var(--accent);"></span> Install from JSON <span style="color:var(--text-muted);margin-left:auto;">Manual</span>
-        </div>`;
-        h += '</div>';
-        body.innerHTML = h;
-    },
-
-    quickInstall(id, displayName, icon, color, caps) {
-        this._installExt({
-            name: id, displayName: displayName, author: 'MAE',
-            version: '1.0.0', icon: icon || 'fa-solid fa-puzzle-piece', color: color || '#fab283',
-            capabilities: caps || [], activated: true,
-        });
-    },
-
-    installTemplate(type) {
-        const templates = {
-            'icon-pack': {
-                name: 'my-icon-pack', displayName: 'My Icon Pack', version: '1.0.0',
-                description: 'Custom file icon pack',
-                icon: 'fa-solid fa-icons', color: '#fcd53a',
-                capabilities: ['icons'], activated: true,
-                entryPoint: 'icons/mapping.json',
-            },
-            'theme': {
-                name: 'my-theme', displayName: 'My Theme', version: '1.0.0',
-                description: 'Custom color theme',
-                icon: 'fa-solid fa-palette', color: '#fab283',
-                capabilities: ['theme'], activated: true,
-                entryPoint: 'theme/colors.json',
-            },
-            'formatter': {
-                name: 'my-formatter', displayName: 'My Formatter', version: '1.0.0',
-                description: 'Code formatting extension',
-                icon: 'fa-solid fa-indent', color: '#00ceb9',
-                capabilities: ['format'], activated: true,
-                executeCommand: 'python format.py',
-            },
-        };
-        const template = templates[type];
-        if (template) this._installExt(template);
-    },
-
-    showInstall() {
-        const json = '{"name":"my-extension","displayName":"My Extension","version":"1.0.0","description":"","author":"me","icon":"fa-solid fa-puzzle-piece","color":"#fab283","capabilities":[],"activated":true}';
-        try {
-            const data = JSON.parse(json);
-            this._installExt(data);
-        } catch (e) {
-            Modal.alert('Invalid JSON: ' + e.message, 'Error');
-        }
-    },
-
-    async _installExt(data) {
-        try {
-            const resp = await fetch('/api/extensions/install', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
-            });
-            if (resp.ok) {
-                this.refresh();
-                M.Output.log(`Installed: ${data.name}`, 'ok');
-            } else {
-                const err = await resp.json();
-                M.Output.log('Install failed: ' + (err.detail || 'Unknown'), 'err');
-            }
-        } catch (e) {
-            M.Output.log('Error: ' + e.message, 'err');
-        }
-    },
-
-    async installSkill(name, desc, icon, color, prompt) {
-        try {
-            const resp = await fetch('/api/skills/install', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: name.toLowerCase().replace(/\s+/g, '-'),
-                    displayName: name,
-                    description: desc,
-                    icon: icon,
-                    color: color,
-                    prompt: prompt,
-                    version: '1.0.0',
-                    author: 'MAE',
-                    activated: true,
-                }),
-            });
-            if (resp.ok) {
-                M.Output.log(`Installed skill: ${name}`, 'ok');
-            } else {
-                const err = await resp.json();
-                M.Output.log('Install failed: ' + (err.detail || 'Unknown'), 'err');
-            }
-        } catch (e) {
-            M.Output.log('Error: ' + e.message, 'err');
-        }
-    },
-
-    search(query) {
-        M.Output.log(`Searching: "${query}"`, 'info');
-    },
-};
-
-// =============================================
-//  SUBAGENT: Skills (Installed Management)
+//  SUBAGENT: Skills (Marketplace + Management)
 // =============================================
 const Skills = {
     skills: [],
+    allAvailable: [],
 
     async refresh() {
         const body = document.getElementById('sidebarBody');
-        if (body) body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">Loading skills...</div>';
+        if (!this._loaded && body) body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">Loading 150+ skills...</div>';
         try {
-            const resp = await fetch('/api/skills/list');
-            if (resp.ok) {
-                this.skills = await resp.json();
+            if (!this._loaded) {
+                const resp = await fetch('/api/skills/list');
+                if (resp.ok) {
+                    this.skills = await resp.json();
+                    this._loaded = true;
+                }
             }
         } catch (e) { this.skills = []; }
         this.render();
@@ -2202,38 +2176,53 @@ const Skills = {
         const body = $('#sidebarBody');
         if (!body) return;
         let h = '<div style="padding:10px;">';
-        h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
-        h += '<div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">INSTALLED (' + this.skills.length + ')</div>';
-        h += '<button onclick="M.UI.showSidebar(\'extensions\')" style="background:var(--accent);color:#0d0d0d;border:none;padding:3px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;">+ Add</button>';
+
+        const installedNames = this.skills.map(s => s.name);
+
+        h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+        h += '<div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">ACTIVE (' + this.skills.filter(s=>s.activated!==false).length + '/' + this.skills.length + ')</div>';
         h += '</div>';
 
-        if (this.skills.length === 0) {
-            h += '<div style="color:var(--text-muted);font-size:11px;text-align:center;padding:16px;">No skills installed<br><span style="font-size:10px;">Install from Extensions marketplace</span></div>';
-        } else {
+        // Pokaż zainstalowane skille z toggle
+        if (this.skills.length > 0) {
+            // Wyszukiwarka
+            h += '<div class="sidebar-search" style="padding:0 0 8px 0;"><input class="sidebar-search-input" id="skillSearch" placeholder="Search skills..." oninput="Skills.filterSkills()" style="width:100%;"></div>';
+
+            h += '<div id="skillList">';
             this.skills.forEach(skill => {
                 const icon = skill.icon || 'fa-solid fa-wand-magic-sparkles';
                 const color = skill.color || '#fab283';
                 const active = skill.activated !== false;
-                const caps = (skill.capabilities || []).map(c => `<span style="background:var(--bg-hover);color:var(--text-dim);padding:1px 5px;border-radius:2px;font-size:8px;">${c}</span>`).join(' ');
-                h += `<div style="padding:8px;background:var(--bg-raised);border-radius:5px;margin-bottom:4px;border-left:2px solid ${color};${active?'':'opacity:0.4'}">
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <span class="${icon}" style="color:${color};font-size:14px;width:18px;text-align:center;"></span>
+                h += `<div class="skill-card" data-skill="${skill.name}" style="padding:6px 8px;background:var(--bg-raised);border-radius:4px;margin-bottom:2px;border-left:2px solid ${color};${active?'':'opacity:0.4'}">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <span class="${icon}" style="color:${color};font-size:13px;width:18px;text-align:center;"></span>
                         <div style="flex:1;min-width:0;">
                             <div style="color:var(--text);font-size:11px;font-weight:500;">${escapeHTML(skill.displayName)}</div>
-                            <div style="color:var(--text-muted);font-size:9px;">v${escapeHTML(skill.version)} · ${escapeHTML(skill.author||'MAE')}</div>
+                            ${skill.description ? `<div style="color:var(--text-muted);font-size:9px;">${escapeHTML(skill.description)}</div>` : ''}
                         </div>
-                        <div onclick="M.Skills.toggleSkill('${skill.name}')" style="width:20px;height:20px;border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:${active?'var(--accent-green)':'var(--text-muted)'};background:var(--bg-hover);font-size:14px;flex-shrink:0;" title="${active?'Active - click to deactivate':'Inactive - click to activate'}">${active?'●':'○'}</div>
-                        <div onclick="M.Skills.uninstallSkill('${skill.name}')" style="width:16px;height:16px;border-radius:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:14px;flex-shrink:0;" title="Uninstall">×</div>
+                        <div onclick="M.Skills.toggleSkill('${skill.name}')" style="width:20px;height:20px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:${active?'var(--accent-green)':'var(--bg-hover)'};flex-shrink:0;transition:all 0.2s;" title="${active?'Disable':'Enable'}">
+                            <div style="width:8px;height:8px;border-radius:50%;background:${active?'#fff':'var(--text-muted)'};transition:all 0.2s;"></div>
+                        </div>
+                        <div onclick="M.Skills.uninstallSkill('${skill.name}')" style="color:var(--text-muted);cursor:pointer;font-size:13px;padding:2px;" title="Uninstall">×</div>
                     </div>
-                    ${skill.description ? `<div style="color:var(--text-dim);font-size:9px;margin-top:4px;line-height:1.3;">${escapeHTML(skill.description)}</div>` : ''}
-                    ${skill.prompt ? `<div style="color:var(--text-dim);font-size:9px;margin-top:3px;padding:3px 6px;background:var(--bg-hover);border-radius:3px;font-style:italic;">${escapeHTML(skill.prompt.substring(0, 80))}${skill.prompt.length > 80 ? '...' : ''}</div>` : ''}
-                    ${caps ? `<div style="display:flex;gap:3px;margin-top:4px;flex-wrap:wrap;">${caps}</div>` : ''}
                 </div>`;
             });
+            h += '</div>';
+        } else {
+            h += '<div style="color:var(--text-muted);font-size:11px;text-align:center;padding:12px 0;">Loading skills...</div>';
         }
 
         h += '</div>';
         body.innerHTML = h;
+    },
+
+    filterSkills() {
+        const q = ($('#skillSearch')?.value || '').toLowerCase();
+        document.querySelectorAll('.skill-card').forEach(card => {
+            const name = (card.dataset.skill || '').toLowerCase();
+            const text = card.textContent.toLowerCase();
+            card.style.display = (name.includes(q) || text.includes(q)) ? '' : 'none';
+        });
     },
 
     async toggleSkill(name) {
@@ -2250,14 +2239,37 @@ const Skills = {
         } catch (e) { this.refresh(); }
     },
 
-    uninstallSkill(name) {
-        Modal.confirm(`Uninstall skill "${name}"?`, async () => {
+    async uninstallSkill(name) {
+        Modal.confirm(`Remove skill "${name}"?`, async () => {
             try {
                 await fetch(`/api/skills/uninstall?name=${name}`, { method: 'DELETE' });
                 this.refresh();
-                M.Output.log(`Uninstalled skill: ${name}`, 'ok');
-            } catch (e) { M.Output.log('Uninstall failed: ' + e.message, 'err'); }
-        }, 'Uninstall Skill', 'Uninstall');
+                M.Output.log(`Removed skill: ${name}`, 'ok');
+            } catch (e) { M.Output.log('Remove failed: ' + e.message, 'err'); }
+        }, 'Remove Skill', 'Remove');
+    },
+
+    async installSkill(name, displayName, desc, icon, color, prompt) {
+        try {
+            const resp = await fetch('/api/skills/install', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name, displayName, description: desc,
+                    icon, color, prompt,
+                    version: '1.0.0', author: 'MAE', activated: true,
+                }),
+            });
+            if (resp.ok) {
+                this.refresh();
+                M.Output.log(`Installed skill: ${displayName}`, 'ok');
+            } else {
+                const err = await resp.json();
+                M.Output.log('Install failed: ' + (err.detail || 'Unknown'), 'err');
+            }
+        } catch (e) {
+            M.Output.log('Error: ' + e.message, 'err');
+        }
     },
 };
 
@@ -2265,7 +2277,7 @@ const Skills = {
 //  Quick commands (exposed globally)
 // =============================================
 const M = {
-    Explorer, Tabs, Editor, Chat, Settings, UI, Execute, Output, Git, Extensions, Skills, Terminal,
+    Explorer, Tabs, Editor, Chat, Settings, UI, Execute, Output, Git, Skills, Terminal,
 
     fileNew() { Explorer.newFile(); },
     executeRun() { Execute.run(); },
@@ -2273,27 +2285,75 @@ const M = {
     init() {
         Chat.init();
         Explorer.refresh();
-        Tabs.render();
-        Editor.show('', '');
+        Tabs.init();
+
+        // Sprawdź parametry URL
+        const params = new URLSearchParams(location.search);
+        const project = params.get('project');
+        if (project) STATE.currentProject = project;
+
+        if (params.get('nosplash') === '1') {
+            if (project) {
+                // Spróbuj otworzyć README projektu
+                setTimeout(() => {
+                    Explorer.openFile(project + '/README.md', 'README.md').catch(() => {
+                        Editor.show('// ' + project + '\n// Select a file from Explorer...\n', 'main');
+                    });
+                }, 500);
+            } else {
+                // Otwórz pusty editor lub pierwszy plik
+                Editor.show('// MAE Editor\n// Use Explorer to open files\n\n', 'untitled');
+            }
+            // Wyczyść parametry z URL (bez przeładowania)
+            if (history.replaceState) {
+                history.replaceState(null, '', '/');
+            }
+        } else {
+            Editor.showWelcome();
+        }
 
         const savedFont = localStorage.getItem('mae-font') || 'Comic Sans MS';
         document.documentElement.style.setProperty('--editor-font', `'${savedFont}'`);
-        $('#fontLabel').textContent = savedFont;
+        const fontLabel = $('#fontLabel');
+        if (fontLabel) fontLabel.textContent = savedFont;
+
+        const savedTheme = localStorage.getItem('mae-theme');
+        if (savedTheme) Settings.setTheme(savedTheme);
 
         const savedProvider = localStorage.getItem('mae-provider');
         if (savedProvider) {
-            $('#chatProvider').value = savedProvider;
+            const chatProv = $('#chatProvider');
+            if (chatProv) chatProv.value = savedProvider;
             STATE.provider = savedProvider;
         }
 
         document.addEventListener('click', e => {
             const w = $('#fontWrap');
-            if (w && !w.contains(e.target)) $('#fontDD').classList.remove('show');
+            const dd = $('#fontDD');
+            if (w && dd && !w.contains(e.target)) dd.classList.remove('show');
         });
 
         document.addEventListener('keydown', e => {
+            // Ctrl+S — Save
             if (e.ctrlKey && e.key === 's') { e.preventDefault(); Editor.save(); }
+            // Ctrl+N — New file
+            if (e.ctrlKey && e.key === 'n') { e.preventDefault(); Explorer.newFile(); }
+            // Ctrl+P — New file (alias)
             if (e.ctrlKey && e.key === 'p') { e.preventDefault(); Explorer.newFile(); }
+            // Ctrl+Enter — Run code
+            if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); Execute.run(); }
+            // Ctrl+K — Toggle chat
+            if (e.ctrlKey && e.key === 'k') { e.preventDefault(); UI.togglePanel('chat'); }
+            // Ctrl+J — Toggle terminal
+            if (e.ctrlKey && e.key === 'j') { e.preventDefault(); Terminal.toggle(); }
+            // Ctrl+B — Toggle sidebar
+            if (e.ctrlKey && e.key === 'b') { e.preventDefault(); const sb = document.querySelector('.sidebar'); if(sb) sb.classList.toggle('hidden'); }
+            // Ctrl+Shift+P — Settings
+            if (e.ctrlKey && e.shiftKey && e.key === 'P') { e.preventDefault(); UI.showSettings(); }
+            // Ctrl+Shift+M — Toggle preview
+            if (e.ctrlKey && e.shiftKey && e.key === 'M') { e.preventDefault(); Editor.togglePreview(); }
+            // Escape — Close modals
+            if (e.key === 'Escape') { Modal._remove(); UI.hideSettings(); }
         });
 
         document.addEventListener('click', e => {

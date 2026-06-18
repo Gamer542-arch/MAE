@@ -1,0 +1,13 @@
+﻿{
+    "description":  "Google AI Studio inspired theme with blue accents",
+    "capabilities":  [
+                         "theme"
+                     ],
+    "color":  "#8ab4f8",
+    "version":  "1.0.0",
+    "activated":  false,
+    "author":  "Google",
+    "name":  "google-ai-studio",
+    "icon":  "fa-solid fa-palette",
+    "displayName":  "Google AI Studio"
+}

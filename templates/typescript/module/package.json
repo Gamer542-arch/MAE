@@ -1,0 +1,15 @@
+{
+  "name": "{name}",
+  "version": "1.0.0",
+  "description": "{name} — TypeScript utility module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,0 +1,13 @@
+﻿{
+    "capabilities":  [
+                         "html",
+                         "rename"
+                     ],
+    "version":  "1.0.0",
+    "color":  "#569cd6",
+    "displayName":  "Auto Rename Tag",
+    "name":  "auto-rename",
+    "description":  "Auto rename paired HTML/XML tags",
+    "author":  "MAE",
+    "icon":  "fa-solid fa-tags"
+}

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ MAE Themes</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0d0d0d;
+            color: #e0dcd7;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 50%, #0d0d0d 100%);
+            border-bottom: 1px solid #1e1e1e;
+            padding: 40px 0;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #fab283, #fc533a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header p { color: #808080; font-size: 14px; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 24px;
+        }
+        .theme-card {
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px solid #1e1e1e;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .theme-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+        }
+        .theme-card.active {
+            border-color: #fab283;
+        }
+        .theme-preview {
+            height: 200px;
+            padding: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+        .theme-preview .titlebar {
+            height: 28px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            gap: 6px;
+        }
+        .theme-preview .titlebar .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .theme-preview .content {
+            display: flex;
+            gap: 8px;
+            height: calc(100% - 28px);
+        }
+        .theme-preview .sidebar {
+            width: 40px;
+            border-radius: 6px;
+            padding: 8px 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: center;
+        }
+        .theme-preview .sidebar .icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        .theme-preview .editor {
+            flex: 1;
+            border-radius: 6px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 10px;
+            line-height: 1.6;
+            overflow: hidden;
+        }
+        .theme-preview .editor .line {
+            display: flex;
+            gap: 8px;
+        }
+        .theme-preview .editor .ln {
+            opacity: 0.4;
+            min-width: 16px;
+        }
+        .theme-info {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .theme-name {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .theme-author {
+            font-size: 11px;
+            color: #808080;
+            margin-top: 2px;
+        }
+        .apply-btn {
+            padding: 8px 20px;
+            border-radius: 6px;
+            border: none;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .apply-btn:hover { transform: scale(1.05); }
+        .apply-btn.applied { cursor: default; }
+        .footer {
+            text-align: center;
+            padding: 40px;
+            color: #505050;
+            font-size: 12px;
+            border-top: 1px solid #1e1e1e;
+            margin-top: 40px;
+        }
+        .footer a { color: #fab283; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎨 MAE Themes</h1>
+        <p>Beautiful themes for your editor — click to apply</p>
+    </div>
+
+    <div class="container">
+        <div class="grid" id="themeGrid"></div>
+    </div>
+
+    <div class="footer">
+        ⚡ MAE — Make Anything Editor · <a href="/">Back to Editor</a>
+    </div>
+
+    <div id="toast" style="position:fixed;bottom:24px;right:24px;background:#1e1e1e;border:1px solid #73c991;color:#73c991;padding:14px 24px;border-radius:8px;font-size:13px;display:flex;align-items:center;gap:10px;transform:translateY(100px);opacity:0;transition:all 0.3s ease;z-index:1000;">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="toastMsg">Theme applied!</span>
+    </div>
+
+    <script>
+        const THEMES = [
+            {
+                id: 'oc2-dark',
+                name: 'OpenCode OC-2 Dark',
+                author: 'MAE',
+                bg: '#0d0d0d', surface: '#141414', sidebar: '#0a0a0a', editor: '#0d0d0d',
+                accent: '#fab283', text: '#e0dcd7', textDim: '#808080', border: '#1e1e1e',
+                green: '#73c991', red: '#F14C4C', blue: '#569cd6', purple: '#c586c0',
+                code: ['#d4d4d4','#569cd6','#ce9178','#6a9955','#dcdcaa','#4ec9b0','#c586c0','#d7ba7d'],
+            },
+            {
+                id: 'google-ai-studio',
+                name: 'Google AI Studio',
+                author: 'Google',
+                bg: '#1e1e2e', surface: '#252536', sidebar: '#17172a', editor: '#1e1e2e',
+                accent: '#8ab4f8', text: '#e8eaed', textDim: '#9aa0a6', border: '#3c3c4e',
+                green: '#81c995', red: '#f28b82', blue: '#8ab4f8', purple: '#c58af9',
+                code: ['#e8eaed','#8ab4f8','#fdd663','#81c995','#f28b82','#c58af9','#fdd663','#9aa0a6'],
+            },
+            {
+                id: 'github-dark',
+                name: 'GitHub Dark',
+                author: 'GitHub',
+                bg: '#0d1117', surface: '#161b22', sidebar: '#0d1117', editor: '#0d1117',
+                accent: '#58a6ff', text: '#c9d1d9', textDim: '#8b949e', border: '#30363d',
+                green: '#3fb950', red: '#f85149', blue: '#58a6ff', purple: '#bc8cff',
+                code: ['#c9d1d9','#79c0ff','#a5d6ff','#7ee787','#ffa657','#d2a8ff','#ffa657','#8b949e'],
+            },
+            {
+                id: 'dracula',
+                name: 'Dracula',
+                author: 'Dracula',
+                bg: '#282a36', surface: '#2d2f3d', sidebar: '#21222c', editor: '#282a36',
+                accent: '#bd93f9', text: '#f8f8f2', textDim: '#6272a4', border: '#44475a',
+                green: '#50fa7b', red: '#ff5555', blue: '#8be9fd', purple: '#bd93f9',
+                code: ['#f8f8f2','#bd93f9','#f1fa8c','#50fa7b','#ff79c6','#8be9fd','#ff79c6','#6272a4'],
+            },
+            {
+                id: 'monokai',
+                name: 'Monokai Pro',
+                author: 'Monokai',
+                bg: '#2d2a2e', surface: '#333036', sidebar: '#252226', editor: '#2d2a2e',
+                accent: '#ffd866', text: '#fcfcfa', textDim: '#727072', border: '#403e41',
+                green: '#a9dc76', red: '#ff6188', blue: '#78dce8', purple: '#ab9df2',
+                code: ['#fcfcfa','#ab9df2','#ffd866','#a9dc76','#ff6188','#78dce8','#a9dc76','#727072'],
+            },
+            {
+                id: 'nord',
+                name: 'Nord',
+                author: 'Nord',
+                bg: '#2e3440', surface: '#3b4252', sidebar: '#2e3440', editor: '#2e3440',
+                accent: '#88c0d0', text: '#eceff4', textDim: '#7b88a1', border: '#3b4252',
+                green: '#a3be8c', red: '#bf616a', blue: '#81a1c1', purple: '#b48ead',
+                code: ['#eceff4','#81a1c1','#d08770','#a3be8c','#b48ead','#88c0d0','#a3be8c','#7b88a1'],
+            },
+            {
+                id: 'one-dark',
+                name: 'One Dark Pro',
+                author: 'Binaryify',
+                bg: '#282c34', surface: '#2c313a', sidebar: '#252930', editor: '#282c34',
+                accent: '#61afef', text: '#abb2bf', textDim: '#5c6370', border: '#3e4451',
+                green: '#98c379', red: '#e06c75', blue: '#61afef', purple: '#c678dd',
+                code: ['#abb2bf','#61afef','#e5c07b','#98c379','#e06c75','#c678dd','#56b6c2','#5c6370'],
+            },
+            {
+                id: 'tokyo-night',
+                name: 'Tokyo Night',
+                author: 'Enkia',
+                bg: '#1a1b26', surface: '#1f2335', sidebar: '#16161e', editor: '#1a1b26',
+                accent: '#7aa2f7', text: '#a9b1d6', textDim: '#565f89', border: '#3b4261',
+                green: '#9ece6a', red: '#f7768e', blue: '#7aa2f7', purple: '#bb9af7',
+                code: ['#a9b1d6','#7aa2f7','#e0af68','#9ece6a','#f7768e','#bb9af7','#7dcfff','#565f89'],
+            },
+            {
+                id: 'catppuccin',
+                name: 'Catppuccin Mocha',
+                author: 'Catppuccin',
+                bg: '#1e1e2e', surface: '#262637', sidebar: '#181825', editor: '#1e1e2e',
+                accent: '#f5c2e7', text: '#cdd6f4', textDim: '#6c7086', border: '#45475a',
+                green: '#a6e3a1', red: '#f38ba8', blue: '#89b4fa', purple: '#cba6f7',
+                code: ['#cdd6f4','#cba6f7','#f9e2af','#a6e3a1','#f38ba8','#89b4fa','#94e2d5','#6c7086'],
+            },
+        ];
+
+        let currentTheme = localStorage.getItem('mae-theme') || 'oc2-dark';
+
+        function renderThemes() {
+            const grid = document.getElementById('themeGrid');
+            let html = '';
+            THEMES.forEach(t => {
+                const isActive = t.id === currentTheme;
+                html += `<div class="theme-card ${isActive?'active':''}" onclick="applyTheme('${t.id}')">
+                    <div class="theme-preview" style="background:${t.bg};">
+                        <div class="titlebar" style="background:${t.sidebar};">
+                            <div class="dot" style="background:#ff5f56;"></div>
+                            <div class="dot" style="background:#ffbd2e;"></div>
+                            <div class="dot" style="background:#27c93f;"></div>
+                        </div>
+                        <div class="content">
+                            <div class="sidebar" style="background:${t.sidebar};border-right:1px solid ${t.border};">
+                                <div class="icon" style="background:${t.accent}30;"></div>
+                                <div class="icon" style="background:${t.border};"></div>
+                                <div class="icon" style="background:${t.border};"></div>
+                                <div class="icon" style="background:${t.border};"></div>
+                            </div>
+                            <div class="editor" style="background:${t.editor};color:${t.code[0]};">
+                                <div class="line"><span class="ln" style="color:${t.textDim}">1</span><span style="color:${t.code[1]}">def</span> <span style="color:${t.code[2]}">hello</span>():</div>
+                                <div class="line"><span class="ln" style="color:${t.textDim}">2</span>  <span style="color:${t.code[3]}">print</span>(<span style="color:${t.code[4]}">"Hello MAE!"</span>)</div>
+                                <div class="line"><span class="ln" style="color:${t.textDim}">3</span></div>
+                                <div class="line"><span class="ln" style="color:${t.textDim}">4</span><span style="color:${t.code[5]}">class</span> <span style="color:${t.code[6]}">Editor</span>:</div>
+                                <div class="line"><span class="ln" style="color:${t.textDim}">5</span>  <span style="color:${t.code[1]}">def</span> <span style="color:${t.code[2]}">__init__</span>(self):</div>
+                                <div class="line"><span class="ln" style="color:${t.textDim}">6</span>    self.<span style="color:${t.code[3]}">theme</span> = <span style="color:${t.code[4]}">"${t.name}"</span></div>
+                                <div class="line"><span class="ln" style="color:${t.textDim}">7</span></div>
+                                <div class="line"><span class="ln" style="color:${t.textDim}">8</span><span style="color:${t.code[5]}">if</span> __name__ == <span style="color:${t.code[4]}">"__main__"</span>:</div>
+                                <div class="line"><span class="ln" style="color:${t.textDim}">9</span>  hello()</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="theme-info" style="background:${t.surface};">
+                        <div>
+                            <div class="theme-name" style="color:${t.text};">${t.name}</div>
+                            <div class="theme-author">by ${t.author}</div>
+                        </div>
+                        <button class="apply-btn ${isActive?'applied':''}" style="background:${isActive?t.green:t.accent};color:${isActive?'#0d0d0d':t.bg};">
+                            ${isActive?'✓ Applied':'Apply'}
+                        </button>
+                    </div>
+                </div>`;
+            });
+            grid.innerHTML = html;
+        }
+
+        function applyTheme(id) {
+            const t = THEMES.find(x => x.id === id);
+            if (!t) return;
+
+            currentTheme = id;
+            localStorage.setItem('mae-theme', id);
+
+            const root = document.documentElement;
+            root.style.setProperty('--bg', t.bg);
+            root.style.setProperty('--bg-surface', t.surface);
+            root.style.setProperty('--bg-raised', t.surface);
+            root.style.setProperty('--bg-hover', t.border);
+            root.style.setProperty('--text', t.text);
+            root.style.setProperty('--text-dim', t.textDim);
+            root.style.setProperty('--text-muted', t.textDim);
+            root.style.setProperty('--border', t.border);
+            root.style.setProperty('--accent', t.accent);
+            root.style.setProperty('--accent-green', t.green);
+            root.style.setProperty('--accent-red', t.red);
+
+            document.body.style.background = t.bg;
+            document.body.style.color = t.text;
+
+            renderThemes();
+            showToast(t.name + ' applied!');
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = msg;
+            t.classList.add('show');
+            t.style.transform = 'translateY(0)';
+            t.style.opacity = '1';
+            setTimeout(() => { t.style.transform = 'translateY(100px)'; t.style.opacity = '0'; }, 2500);
+        }
+
+        renderThemes();
+    </script>
+</body>
+</html>

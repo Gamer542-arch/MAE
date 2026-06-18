@@ -1,0 +1,1 @@
+﻿use actix_web::{get, App, HttpResponse, HttpServer};\n\n#[get("/")]\nasync fn root() -> HttpResponse {\n    HttpResponse::Ok().json(serde_json::json!({"message":"Hello from {name}!"}))\n}\n\n#[actix_web::main]\nasync fn main() -> std::io::Result<()> {\n    HttpServer::new(|| App::new().service(root)).bind("0.0.0.0:3000")?.run().await\n}\n

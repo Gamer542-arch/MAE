@@ -1,0 +1,13 @@
+﻿{
+    "description":  "GitHub\u0027s official dark theme",
+    "capabilities":  [
+                         "theme"
+                     ],
+    "color":  "#58a6ff",
+    "version":  "1.0.0",
+    "activated":  false,
+    "author":  "GitHub",
+    "name":  "github-dark",
+    "icon":  "fa-solid fa-palette",
+    "displayName":  "GitHub Dark"
+}

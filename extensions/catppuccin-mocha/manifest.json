@@ -1,0 +1,13 @@
+﻿{
+    "description":  "Soothing pastel theme",
+    "capabilities":  [
+                         "theme"
+                     ],
+    "color":  "#f5c2e7",
+    "version":  "1.0.0",
+    "activated":  false,
+    "author":  "Catppuccin",
+    "name":  "catppuccin-mocha",
+    "icon":  "fa-solid fa-palette",
+    "displayName":  "Catppuccin Mocha"
+}

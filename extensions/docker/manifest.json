@@ -1,15 +1,14 @@
-{
-  "name": "docker",
-  "displayName": "Docker Support",
-  "version": "1.0.0",
-  "description": "",
-  "author": "MAE",
-  "icon": "fa-solid fa-puzzle-piece",
-  "color": "#fab283",
-  "entryPoint": "",
-  "repository": "",
-  "startCommand": "",
-  "folder": "",
-  "executeCommand": "",
-  "capabilities": []
+﻿{
+    "capabilities":  [
+                         "syntax",
+                         "lint",
+                         "snippets"
+                     ],
+    "version":  "1.0.0",
+    "color":  "#2496ED",
+    "displayName":  "Docker Support",
+    "name":  "docker",
+    "description":  "Dockerfile, docker-compose syntax and snippets",
+    "author":  "MAE",
+    "icon":  "fa-brands fa-docker"
 }

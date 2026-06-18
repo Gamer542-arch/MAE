@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAE — Welcome</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+:root{
+    --bg:#0d0d0d;--surface:#131313;--raised:#191919;--hover:#1e1e1e;--active:#242424;
+    --border:#1e1e1e;--text:#e0dcd7;--dim:#6e6e6e;--muted:#4a4a4a;--bright:#f0ece8;
+    --accent:#fab283;--accent-hover:#fcd053;--accent-dim:rgba(250,178,131,0.08);
+    --green:#12c905;--red:#fc533a;--blue:#8cb0ff;--purple:#edb2f1;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow-y:auto;-webkit-font-smoothing:antialiased;display:flex;align-items:center;justify-content:center}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#242424;border-radius:3px}
+.wrap{max-width:760px;width:100%;padding:48px 24px;text-align:center}
+
+/* Logo */
+.logo{
+    font-family:'Comic Sans MS',cursive;
+    font-size:48px;font-weight:700;letter-spacing:2px;
+    background:linear-gradient(135deg,#fab283,#fc533a);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+    margin-bottom:8px;
+}
+.tagline{color:var(--dim);font-size:14px;margin-bottom:36px}
+
+/* Big buttons */
+.big-btns{display:flex;gap:16px;justify-content:center;margin-bottom:40px;flex-wrap:wrap}
+.big-btn{
+    padding:20px 32px;border-radius:12px;border:2px solid var(--border);
+    background:var(--raised);cursor:pointer;transition:all 0.2s;
+    min-width:240px;text-align:left;display:flex;align-items:center;gap:14px;
+}
+.big-btn:hover{border-color:var(--accent);background:var(--hover);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+.big-btn .icon{font-size:28px;flex-shrink:0}
+.big-btn h3{font-size:15px;font-weight:600;color:var(--text);margin-bottom:3px}
+.big-btn p{font-size:11px;color:var(--dim)}
+
+/* Wizard / modal */
+.wizard-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:100;display:none;align-items:center;justify-content:center}
+.wizard-overlay.show{display:flex}
+.wizard-box{background:var(--bg);border:1px solid var(--border);border-radius:14px;width:560px;max-width:90vw;max-height:80vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,0.7)}
+.wizard-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+.wizard-head span{font-size:14px;font-weight:600}
+.wizard-head button{background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer}
+.wizard-head button:hover{color:var(--text)}
+.wizard-body{padding:18px}
+.wizard-steps{display:flex;gap:4px;margin-bottom:18px}
+.wizard-step{flex:1;height:3px;background:var(--active);border-radius:2px}
+.wizard-step.done{background:var(--accent)}
+.wizard-step.active{background:var(--accent)}
+
+/* Language grid */
+.lang-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.lang-card{
+    padding:14px 10px;background:var(--raised);border:2px solid var(--border);
+    border-radius:10px;cursor:pointer;text-align:center;transition:all 0.15s
+}
+.lang-card:hover{border-color:var(--accent);background:var(--hover)}
+.lang-card.selected{border-color:var(--accent-green);background:var(--accent-dim)}
+.lang-card i{font-size:22px;margin-bottom:6px;display:block}
+.lang-card .name{font-size:11px;font-weight:500}
+
+/* Template grid */
+.template-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}
+.template-card{
+    padding:12px;background:var(--raised);border:2px solid var(--border);
+    border-radius:8px;cursor:pointer;transition:all 0.15s;text-align:left
+}
+.template-card:hover{border-color:var(--accent);background:var(--hover)}
+.template-card.selected{border-color:var(--accent-green);background:var(--accent-dim)}
+.template-card i{font-size:18px;margin-bottom:6px}
+.template-card h4{font-size:12px;font-weight:600;margin-bottom:2px}
+.template-card p{font-size:10px;color:var(--dim)}
+
+/* Input */
+.wiz-input{width:100%;background:var(--raised);border:2px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;margin-bottom:12px}
+.wiz-input:focus{border-color:var(--accent)}
+.wiz-input::placeholder{color:var(--muted)}
+
+/* Buttons */
+.wiz-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+.wiz-btn{padding:8px 20px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.wiz-btn.primary{background:var(--accent);color:#0d0d0d}
+.wiz-btn.primary:hover{background:var(--accent-hover)}
+.wiz-btn.secondary{background:var(--raised);border:1px solid var(--border);color:var(--text)}
+.wiz-btn.secondary:hover{background:var(--hover)}
+
+.te{color:var(--dim);font-size:10px;margin-top:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+    <div class="logo">MAE</div>
+    <div class="tagline">Make Anything Editor — Your AI-powered workspace</div>
+
+    <div class="big-btns">
+        <div class="big-btn" onclick="showWizard()">
+            <span class="icon">🚀</span>
+            <div><h3>Create New Project</h3><p>Pick a language & template, start coding</p></div>
+        </div>
+        <div class="big-btn" onclick="loadProjects()">
+            <span class="icon">📂</span>
+            <div><h3>Open Project</h3><p>Browse workspace projects</p></div>
+        </div>
+    </div>
+
+    <button onclick="enterEditor()" style="display:inline-flex;align-items:center;gap:8px;padding:12px 32px;border-radius:8px;border:2px solid var(--accent);background:var(--accent-dim);color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s;margin-bottom:40px;"
+        onmouseover="this.style.background='var(--accent)';this.style.color='#0d0d0d'"
+        onmouseout="this.style.background='var(--accent-dim)';this.style.color='var(--accent)'">
+        ⚡ Continue to Editor
+        <i class="fa-solid fa-arrow-right" style="font-size:12px;"></i>
+    </button>
+
+    <div id="projectList"></div>
+</div>
+
+<!-- Wizard -->
+<div class="wizard-overlay" id="wizardOverlay" onclick="if(event.target===this)hideWizard()">
+    <div class="wizard-box">
+        <div class="wizard-head">
+            <span id="wizTitle">Create New Project</span>
+            <button onclick="hideWizard()">&times;</button>
+        </div>
+        <div class="wizard-body">
+            <div class="wizard-steps" id="wizSteps">
+                <div class="wizard-step active"></div>
+                <div class="wizard-step"></div>
+                <div class="wizard-step"></div>
+            </div>
+            <div id="wizContent"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const LANGUAGES = [
+    { id:'python', name:'Python', icon:'fa-brands fa-python', color:'#3572A5', ext:'py', cmd:'python' },
+    { id:'javascript', name:'JavaScript', icon:'fa-brands fa-js', color:'#F7DF1E', ext:'js', cmd:'node' },
+    { id:'typescript', name:'TypeScript', icon:'fa-brands fa-js', color:'#3178C6', ext:'ts', cmd:'npx ts-node' },
+    { id:'go', name:'Go', icon:'fa-brands fa-golang', color:'#00ADD8', ext:'go', cmd:'go run' },
+    { id:'rust', name:'Rust', icon:'fa-brands fa-rust', color:'#DEA584', ext:'rs', cmd:'cargo run' },
+    { id:'java', name:'Java', icon:'fa-brands fa-java', color:'#F89820', ext:'java', cmd:'java' },
+    { id:'csharp', name:'C#', icon:'fa-solid fa-code', color:'#512BD4', ext:'cs', cmd:'dotnet run' },
+    { id:'php', name:'PHP', icon:'fa-brands fa-php', color:'#777BB4', ext:'php', cmd:'php' },
+    { id:'ruby', name:'Ruby', icon:'fa-solid fa-gem', color:'#CC342D', ext:'rb', cmd:'ruby' },
+    { id:'html', name:'HTML/CSS', icon:'fa-brands fa-html5', color:'#E34F26', ext:'html', cmd:null },
+    { id:'kotlin', name:'Kotlin', icon:'fa-solid fa-code', color:'#7F52FF', ext:'kt', cmd:'kotlin' },
+    { id:'swift', name:'Swift', icon:'fa-brands fa-swift', color:'#F05138', ext:'swift', cmd:'swift' },
+];
+
+let wizardTemplates = [];
+let wizard = { step:0, lang:null, template:'empty' };
+
+function hideWizard() {
+    document.getElementById('wizardOverlay').classList.remove('show');
+    wizard = { step:0, lang:null, template:'empty' };
+}
+
+function showWizard() {
+    wizard = { step:0, lang:null, template:'empty' };
+    document.getElementById('wizardOverlay').classList.add('show');
+    renderWizard();
+}
+
+async function loadTemplates(langId) {
+    try {
+        const resp = await fetch('/api/projects/templates?language=' + langId);
+        wizardTemplates = await resp.json();
+    } catch(e) { wizardTemplates = []; }
+    if (!wizardTemplates.length) {
+        wizardTemplates = [{id:'empty',name:'Empty',files:[]}];
+    }
+}
+
+function renderWizard() {
+    const content = document.getElementById('wizContent');
+    const steps = document.getElementById('wizSteps');
+    const title = document.getElementById('wizTitle');
+    const s = wizard;
+
+    // Update steps
+    const stepEls = steps.querySelectorAll('.wizard-step');
+    stepEls.forEach((el,i) => {
+        if (i < s.step) el.classList.add('done');
+        else if (i === s.step) el.classList.add('active');
+        else { el.classList.remove('done','active'); }
+    });
+
+    if (s.step === 0) {
+        title.textContent = 'Step 1: Choose Language';
+        content.innerHTML = `<div class="lang-grid">${
+            LANGUAGES.map(l => `<div class="lang-card${s.lang===l.id?' selected':''}" onclick="wizard.lang='${l.id}';loadTemplates('${l.id}');renderWizard()">
+                <i class="${l.icon}" style="color:${l.color}"></i>
+                <span class="name">${l.name}</span>
+            </div>`).join('')
+        }</div>
+        <div class="te">Tap a language to select</div>
+        <div class="wiz-actions">
+            <button class="wiz-btn secondary" onclick="hideWizard()">Cancel</button>
+            <button class="wiz-btn primary" onclick="if(wizard.lang){wizard.step=1;renderWizard()}" ${wizard.lang?'':'disabled'}>Next →</button>
+        </div>`;
+    } else if (s.step === 1) {
+        const lang = LANGUAGES.find(l=>l.id===s.lang);
+        title.textContent = 'Step 2: Project Name & Template';
+        const icons = {empty:'fa-file',web:'fa-globe',cli:'fa-terminal',api:'fa-plug',lib:'fa-cubes'};
+        content.innerHTML = `
+            <div style="margin-bottom:12px;">
+                <div style="font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Project Name</div>
+                <input class="wiz-input" id="projName" placeholder="my-${lang.id}-project" value="my-${lang.id}-project">
+            </div>
+            <div style="font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Template</div>
+            <div class="template-grid">${
+                wizardTemplates.map(t => `<div class="template-card${s.template===t.id?' selected':''}" onclick="wizard.template='${t.id}';renderWizard()">
+                    <i class="fa-solid ${icons[t.id]||'fa-file'}" style="color:var(--accent)"></i>
+                    <h4>${t.name}</h4>
+                    <p>${t.id} template for ${lang.name} (${t.files?.length||0} files)</p>
+                </div>`).join('')
+            }</div>
+            <div class="te">Workspace/<strong id="previewPath">my-${lang.id}-project</strong>/</div>
+            <div class="wiz-actions">
+                <button class="wiz-btn secondary" onclick="wizard.step=0;renderWizard()">← Back</button>
+                <button class="wiz-btn primary" onclick="createProject()">🚀 Create Project</button>
+            </div>
+        `;
+        document.getElementById('projName').addEventListener('input', function(){
+            document.getElementById('previewPath').textContent = this.value || 'my-project';
+        });
+    }
+}
+
+async function createProject() {
+    const name = document.getElementById('projName')?.value?.trim() || 'my-project';
+    const lang = LANGUAGES.find(l=>l.id===wizard.lang);
+
+    const payload = {
+        project: name,
+        language: lang ? lang.id : 'text',
+        template: wizard.template || 'empty',
+        ext: lang ? lang.ext : 'txt',
+    };
+
+    try {
+        const resp = await fetch('/api/projects/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const data = await resp.json();
+        if (data.ok) {
+            hideWizard();
+            setTimeout(() => { top.location.href = '/?nosplash=1&project=' + encodeURIComponent(name); }, 300);
+        } else {
+            alert('Error: ' + (data.error || 'Unknown'));
+        }
+    } catch(e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+async function loadProjects() {
+    try {
+        const resp = await fetch('/api/projects/list');
+        const projects = await resp.json();
+        const el = document.getElementById('projectList');
+        if (!projects.length) {
+            el.innerHTML = '<div style="color:var(--muted);font-size:12px;margin-top:20px;">No projects yet. Create one!</div>';
+            return;
+        }
+        let h = '<div style="text-align:left;max-width:400px;margin:20px auto 0;"><div style="font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Projects</div>';
+        projects.forEach(p => {
+            h += `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--raised);border:1px solid var(--border);border-radius:6px;margin-bottom:4px;cursor:pointer;transition:border-color 0.15s" onclick="openProject('${p}')">
+                <i class="fa-solid fa-folder" style="color:var(--accent)"></i>
+                <span style="flex:1">${p}</span>
+                <i class="fa-solid fa-arrow-right" style="color:var(--dim);font-size:10px"></i>
+            </div>`;
+        });
+        h += '</div>';
+        el.innerHTML = h;
+    } catch(e) {
+        document.getElementById('projectList').innerHTML = '<div style="color:var(--red);font-size:12px;margin-top:20px;">Error loading projects</div>';
+    }
+}
+
+function openProject(name) {
+    top.location.href = '/?nosplash=1&project=' + encodeURIComponent(name);
+}
+
+function enterEditor() {
+    top.location.href = '/?nosplash=1';
+}
+
+// Esc closes wizard
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') hideWizard();
+});
+</script>
+</body>
+</html>

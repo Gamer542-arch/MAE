@@ -1,0 +1,13 @@
+﻿{
+    "capabilities":  [
+                         "diagnostic",
+                         "inline"
+                     ],
+    "version":  "1.0.0",
+    "color":  "#F14C4C",
+    "displayName":  "Error Lens",
+    "name":  "error-lens",
+    "description":  "Inline error and warning decorations",
+    "author":  "MAE",
+    "icon":  "fa-solid fa-circle-exclamation"
+}

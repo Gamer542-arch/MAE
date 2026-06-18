@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{name} — UI Components</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="docs-header">
+    <div class="container">
+      <h1><span class="gradient-text">{name}</span> <small>UI Components</small></h1>
+      <p>A collection of reusable, accessible, and beautiful components.</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Buttons -->
+    <section class="component-section" id="buttons">
+      <h2 class="section-label">Buttons</h2>
+      <div class="component-showcase">
+        <button class="btn btn-primary">Primary</button>
+        <button class="btn btn-secondary">Secondary</button>
+        <button class="btn btn-outline">Outline</button>
+        <button class="btn btn-ghost">Ghost</button>
+        <button class="btn btn-danger">Danger</button>
+        <button class="btn btn-primary" disabled>Disabled</button>
+      </div>
+      <div class="component-showcase">
+        <button class="btn btn-primary btn-sm">Small</button>
+        <button class="btn btn-primary">Default</button>
+        <button class="btn btn-primary btn-lg">Large</button>
+      </div>
+    </section>
+
+    <!-- Cards -->
+    <section class="component-section" id="cards">
+      <h2 class="section-label">Cards</h2>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-img" style="background:linear-gradient(135deg,#fab283,#fc533a);"></div>
+          <div class="card-body">
+            <span class="card-tag">Design</span>
+            <h3 class="card-title">Beautiful Components</h3>
+            <p class="card-text">Pre-built UI components that you can copy and paste into your projects.</p>
+            <div class="card-footer">
+              <span class="card-author">By {name}</span>
+              <span class="card-date">2 min read</span>
+            </div>
+          </div>
+        </div>
+        <div class="card card-horizontal">
+          <div class="card-img" style="background:linear-gradient(135deg,#667eea,#764ba2);flex:0 0 160px;"></div>
+          <div class="card-body">
+            <h3 class="card-title">Horizontal Card</h3>
+            <p class="card-text">A card layout with the image on the side. Great for list views.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="card-icon">✨</div>
+            <h3 class="card-title">Icon Card</h3>
+            <p class="card-text">A minimal card variant with just an icon and text content.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Modals -->
+    <section class="component-section" id="modals">
+      <h2 class="section-label">Modal</h2>
+      <button class="btn btn-primary" onclick="document.getElementById('demo-modal').classList.add('modal-open')">
+        Open Modal
+      </button>
+      <div class="modal-overlay" id="demo-modal" onclick="if(event.target===this)this.classList.remove('modal-open')">
+        <div class="modal">
+          <div class="modal-header">
+            <h3>Modal Title</h3>
+            <button class="modal-close" onclick="document.getElementById('demo-modal').classList.remove('modal-open')">&times;</button>
+          </div>
+          <div class="modal-body">
+            <p>This is a modal dialog. Click outside or press the close button to dismiss.</p>
+            <p>Modals are great for confirmations, forms, and displaying additional content without navigating away.</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="document.getElementById('demo-modal').classList.remove('modal-open')">Cancel</button>
+            <button class="btn btn-primary" onclick="document.getElementById('demo-modal').classList.remove('modal-open')">Confirm</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Navigation -->
+    <section class="component-section" id="nav">
+      <h2 class="section-label">Navigation</h2>
+      <nav class="demo-nav">
+        <div class="demo-nav-brand">{name}</div>
+        <ul class="demo-nav-links">
+          <li><a href="#" class="active">Home</a></li>
+          <li><a href="#">Features</a></li>
+          <li><a href="#">Pricing</a></li>
+          <li><a href="#">About</a></li>
+        </ul>
+        <button class="btn btn-primary btn-sm">Sign In</button>
+      </nav>
+      <nav class="demo-nav demo-nav-tabs">
+        <a href="#" class="active">Tab 1</a>
+        <a href="#">Tab 2</a>
+        <a href="#">Tab 3</a>
+        <a href="#">Tab 4</a>
+      </nav>
+    </section>
+
+    <!-- Form Elements -->
+    <section class="component-section" id="forms">
+      <h2 class="section-label">Form Elements</h2>
+      <div class="form-group">
+        <label class="form-label" for="demo-input">Text Input</label>
+        <input type="text" class="form-input" id="demo-input" placeholder="Enter your name...">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="demo-select">Select</label>
+        <select class="form-input" id="demo-select">
+          <option>Option 1</option>
+          <option>Option 2</option>
+          <option>Option 3</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Checkboxes</label>
+        <label class="form-checkbox">
+          <input type="checkbox" checked>
+          <span>Option A</span>
+        </label>
+        <label class="form-checkbox">
+          <input type="checkbox">
+          <span>Option B</span>
+        </label>
+      </div>
+      <div class="form-row">
+        <button class="btn btn-primary">Submit</button>
+        <button class="btn btn-ghost">Reset</button>
+      </div>
+    </section>
+
+    <!-- Badges -->
+    <section class="component-section" id="badges">
+      <h2 class="section-label">Badges & Alerts</h2>
+      <div class="component-showcase">
+        <span class="badge badge-info">Info</span>
+        <span class="badge badge-success">Success</span>
+        <span class="badge badge-warning">Warning</span>
+        <span class="badge badge-danger">Danger</span>
+      </div>
+      <div class="alert alert-info">This is an informational alert.</div>
+      <div class="alert alert-success">Action completed successfully!</div>
+      <div class="alert alert-warning">Please check your settings.</div>
+      <div class="alert alert-danger">Something went wrong. Try again.</div>
+    </section>
+  </main>
+
+  <footer class="docs-footer">
+    <div class="container">
+      <p>{name} — UI Component Library</p>
+    </div>
+  </footer>
+
+  <script>
+    document.querySelectorAll('.modal-close').forEach(btn => {
+      btn.addEventListener('click', function() {
+        this.closest('.modal-overlay').classList.remove('modal-open');
+      });
+    });
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', function(e) {
+        if (e.target === this) this.classList.remove('modal-open');
+      });
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.modal-open').forEach(m => m.classList.remove('modal-open'));
+      }
+    });
+  </script>
+</body>
+</html>

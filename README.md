@@ -140,21 +140,6 @@ MAE/
 
 ---
 
-## 🎓 Skills
-
-### 🧠 AI Prompt Templates
-
-| Skill | Description |
-|-------|-------------|
-| 🐍 **Python Expert** | Advanced Python coding |
-| 🔍 **Code Reviewer** | Bug detection, improvements |
-| 🧪 **Test Writer** | Unit test generation |
-| 🐛 **Debugger** | Find and fix bugs |
-| ✨ **Refactorer** | Code structure improvements |
-| 📚 **Doc Writer** | Documentation generation |
-
----
-
 ## 🔌 API Endpoints
 
 ### 📂 Files

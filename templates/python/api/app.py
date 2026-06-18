@@ -1,0 +1,1 @@
+﻿""" {name} — FastAPI Server """\n\nfrom fastapi import FastAPI\n\napp = FastAPI(title="{name}")\n\n@app.get("/")\ndef root():\n    return {"message": "Hello from {name}!"}\n\nif __name__ == "__main__":\n    import uvicorn\n    uvicorn.run(app, host="0.0.0.0", port=8001)\n
